@@ -4,9 +4,9 @@
 // Goldmark has no notion of the syntax: it sees a link that failed to parse
 // and hands the renderer a bracketed text run, which the escaper then protects
 // character by character, so the citation reaches the LaTeX as prose. This
-// package supplies the inline parser that recognises it (srd-6-citations R1),
+// package supplies the inline parser that recognises it (srd006-citations R1),
 // the node it produces, and the rendering and validation the renderer core
-// calls (srd-6-citations R2, R3).
+// calls (srd006-citations R2, R3).
 package cite
 
 import (
@@ -25,7 +25,7 @@ import (
 var Kind = ast.NewNodeKind("Citation")
 
 // Node is one bracketed citation run, holding its keys in source order
-// (srd-6-citations R1.3, R1.4).
+// (srd006-citations R1.3, R1.4).
 type Node struct {
 	ast.BaseInline
 
@@ -50,11 +50,11 @@ func (n *Node) Dump(source []byte, level int) {
 //
 // A nil KeySet turns validation off; an empty non-nil KeySet holds no valid
 // key, so every citation fails against it. The two are distinguishable, which
-// is what srd-6-citations R3.2 requires.
+// is what srd006-citations R3.2 requires.
 type KeySet map[string]struct{}
 
 // NewKeySet builds a KeySet from the caller's keys. The library never reads a
-// reference corpus; the caller owns it (srd-6-citations R3.3).
+// reference corpus; the caller owns it (srd006-citations R3.3).
 func NewKeySet(keys ...string) KeySet {
 	set := make(KeySet, len(keys))
 	for _, key := range keys {
@@ -65,7 +65,7 @@ func NewKeySet(keys ...string) KeySet {
 
 // UnknownKeyError is a citation naming a key the caller's corpus does not
 // hold. The renderer core wraps it with the file and the line, which it can
-// derive from Offset (srd-6-citations R3.1, R3.4).
+// derive from Offset (srd006-citations R3.1, R3.4).
 type UnknownKeyError struct {
 	Key    string
 	Offset int
@@ -77,7 +77,7 @@ func (e *UnknownKeyError) Error() string {
 
 // Validate reports the first key the set does not hold, or nil when the set is
 // absent or holds them all. Reporting the first rather than every failure
-// names one line an author can go to (srd-6-citations R3.1, R3.4).
+// names one line an author can go to (srd006-citations R3.1, R3.4).
 func Validate(node *Node, keys KeySet) error {
 	if keys == nil {
 		return nil
@@ -91,10 +91,10 @@ func Validate(node *Node, keys KeySet) error {
 }
 
 // Render writes the cite command for a citation node: the keys joined by
-// commas with no spaces (srd-6-citations R2.1).
+// commas with no spaces (srd006-citations R2.1).
 //
 // Keys are written raw. A key that needed escaping is a key the corpus should
-// not hold (srd-6-citations R2.2).
+// not hold (srd006-citations R2.2).
 func Render(writer io.Writer, node *Node) error {
 	_, err := io.WriteString(writer, `\cite{`+strings.Join(node.Keys, ",")+`}`)
 	return err
@@ -108,7 +108,7 @@ type extension struct{}
 // Extend registers the inline parser ahead of goldmark's link parser, which
 // shares the opening-bracket trigger. Precedence is safe because the citation
 // parser declines anything that is not a citation, and goldmark then offers
-// the run to the parsers behind it (srd-6-citations R4.1).
+// the run to the parsers behind it (srd006-citations R4.1).
 func (extension) Extend(markdown goldmark.Markdown) {
 	markdown.Parser().AddOptions(
 		parser.WithInlineParsers(util.Prioritized(&citationParser{}, 100)),
@@ -118,12 +118,12 @@ func (extension) Extend(markdown goldmark.Markdown) {
 type citationParser struct{}
 
 // Trigger is the opening bracket, which is where a citation run starts
-// (srd-6-citations R1.3).
+// (srd006-citations R1.3).
 func (p *citationParser) Trigger() []byte { return []byte{'['} }
 
 // Parse consumes one citation run and returns its node, or nil when the run is
 // not a citation. Returning nil rather than an empty node is what lets link
-// and image syntax parse as they always did (srd-6-citations R4.1, R4.2).
+// and image syntax parse as they always did (srd006-citations R4.1, R4.2).
 func (p *citationParser) Parse(parent ast.Node, block text.Reader, pc parser.Context) ast.Node {
 	line, segment := block.PeekLine()
 	keys, width := parseRun(line)
@@ -140,7 +140,7 @@ func (p *citationParser) Parse(parent ast.Node, block text.Reader, pc parser.Con
 //
 // The grammar is small enough to read directly: an opening bracket, then keys
 // each introduced by an at sign and separated by a semicolon with optional
-// whitespace, then a closing bracket (srd-6-citations R1.1).
+// whitespace, then a closing bracket (srd006-citations R1.1).
 func parseRun(line []byte) ([]string, int) {
 	if len(line) == 0 || line[0] != '[' {
 		return nil, 0
@@ -189,7 +189,7 @@ func parseRun(line []byte) ([]string, int) {
 }
 
 // isKeyByte reports whether b may appear in key text: letters, digits,
-// hyphens, underscores, colons, periods, and slashes (srd-6-citations R1.2).
+// hyphens, underscores, colons, periods, and slashes (srd006-citations R1.2).
 func isKeyByte(b byte) bool {
 	switch {
 	case b >= 'a' && b <= 'z', b >= 'A' && b <= 'Z', b >= '0' && b <= '9':
@@ -201,7 +201,7 @@ func isKeyByte(b byte) bool {
 }
 
 // trimSentencePunctuation gives back a trailing period or colon, which belongs
-// to the sentence rather than the key (srd-6-citations R1.2).
+// to the sentence rather than the key (srd006-citations R1.2).
 func trimSentencePunctuation(key string) string {
 	return strings.TrimRight(key, ".:")
 }

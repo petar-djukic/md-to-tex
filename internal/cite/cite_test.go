@@ -41,7 +41,7 @@ func render(t *testing.T, node *Node) string {
 	return builder.String()
 }
 
-// TestParseRecognisesTheCitationForms covers srd-6-citations R1.1, R1.2, and
+// TestParseRecognisesTheCitationForms covers srd006-citations R1.1, R1.2, and
 // R1.4: single and grouped runs, the key character set, and duplicates kept in
 // order.
 func TestParseRecognisesTheCitationForms(t *testing.T) {
@@ -95,7 +95,7 @@ func TestParseRecognisesTheCitationForms(t *testing.T) {
 	}
 }
 
-// TestRenderEmitsTheCiteCommand covers srd-6-citations R2.1 and R2.2 with the
+// TestRenderEmitsTheCiteCommand covers srd006-citations R2.1 and R2.2 with the
 // examples the SRD states, and AC1. R2.2 holds because a key carrying an
 // underscore reaches the cite command unescaped, which the last case shows.
 func TestRenderEmitsTheCiteCommand(t *testing.T) {
@@ -128,7 +128,7 @@ func TestRenderEmitsTheCiteCommand(t *testing.T) {
 	}
 }
 
-// TestValidateReportsAnUnknownKey covers srd-6-citations R3.1 and R3.4 and
+// TestValidateReportsAnUnknownKey covers srd006-citations R3.1 and R3.4 and
 // AC2: the first offending key, with the offset a caller turns into a line.
 func TestValidateReportsAnUnknownKey(t *testing.T) {
 	found := citations(t, "Converge [@du-2023; @absent-key; @also-absent].")
@@ -149,7 +149,7 @@ func TestValidateReportsAnUnknownKey(t *testing.T) {
 	}
 }
 
-// TestValidateDistinguishesAbsentFromEmpty covers srd-6-citations R3.2, R3.3,
+// TestValidateDistinguishesAbsentFromEmpty covers srd006-citations R3.2, R3.3,
 // and AC3: no key set means validation is off, an empty set means nothing is
 // valid, and both sets come from the caller because the library never reads a
 // reference corpus.
@@ -167,7 +167,7 @@ func TestValidateDistinguishesAbsentFromEmpty(t *testing.T) {
 	}
 }
 
-// TestParseDeclinesWhatIsNotACitation covers srd-6-citations R4.1, R4.2, R4.3,
+// TestParseDeclinesWhatIsNotACitation covers srd006-citations R4.1, R4.2, R4.3,
 // and R4.5, and AC4.
 func TestParseDeclinesWhatIsNotACitation(t *testing.T) {
 	cases := []struct {
@@ -195,7 +195,7 @@ func TestParseDeclinesWhatIsNotACitation(t *testing.T) {
 	}
 }
 
-// TestParseGivesBackSentencePunctuation covers srd-6-citations R1.2 and AC6: a
+// TestParseGivesBackSentencePunctuation covers srd006-citations R1.2 and AC6: a
 // trailing period or colon belongs to the sentence, not the key.
 func TestParseGivesBackSentencePunctuation(t *testing.T) {
 	cases := []struct {
@@ -218,7 +218,7 @@ func TestParseGivesBackSentencePunctuation(t *testing.T) {
 	}
 }
 
-// TestCitationsParseWhereverInlineContentGoes covers srd-6-citations R2.3: a
+// TestCitationsParseWhereverInlineContentGoes covers srd006-citations R2.3: a
 // citation is an inline node, so it parses in a heading and a list item as it
 // does in a paragraph.
 func TestCitationsParseWhereverInlineContentGoes(t *testing.T) {
@@ -240,7 +240,7 @@ func TestCitationsParseWhereverInlineContentGoes(t *testing.T) {
 	}
 }
 
-// TestParserIsTriggeredOnTheOpeningBracket covers srd-6-citations R1.3: the
+// TestParserIsTriggeredOnTheOpeningBracket covers srd006-citations R1.3: the
 // parser is registered as a goldmark inline parser on the opening bracket, and
 // the node it produces holds the keys in order.
 func TestParserIsTriggeredOnTheOpeningBracket(t *testing.T) {

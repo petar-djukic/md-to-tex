@@ -36,10 +36,10 @@ between the SRD and the code is a failing test rather than a discussion.
 
 An implementation issue names the SRD it executes and the requirement ids it
 covers. Tests carry the same ids in their names or in a comment, written as the
-SRD id and the requirement id adjacent -- `srd-3-escaping R1.1` -- since a Go
+SRD id and the requirement id adjacent -- `srd003-escaping R1.1` -- since a Go
 test name holds neither dots nor hyphens and a comment does. Several
 requirements of one SRD may follow a single mention of it, separated by commas
-or the word and: `srd-3-escaping R2.1, R2.3, and R3.1` credits all three. `mage audit` reads
+or the word and: `srd003-escaping R2.1, R2.3, and R3.1` credits all three. `mage audit` reads
 every test for those references and reports which requirements none of them
 names. A reference to a requirement that does not exist fails the audit, because
 a test claiming coverage it does not have is worse than one claiming none.

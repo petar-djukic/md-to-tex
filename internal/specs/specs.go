@@ -116,8 +116,8 @@ type criterion struct {
 }
 
 // requirementReference matches the way a test names requirements: the SRD id
-// followed by one or more requirement ids, as in "srd-3-escaping R1.1" or
-// "srd-3-escaping R2.1, R2.3, and R3.1". Go test names cannot hold dots or
+// followed by one or more requirement ids, as in "srd003-escaping R1.1" or
+// "srd003-escaping R2.1, R2.3, and R3.1". Go test names cannot hold dots or
 // hyphens, so in practice the reference sits in a comment or in a
 // table-driven case's name field.
 //
@@ -129,10 +129,15 @@ type criterion struct {
 // comment puts between two ids, and nothing else: a word other than "and"
 // ends the run, so prose after the last id is not read as more of it.
 var requirementReference = regexp.MustCompile(
-	`(srd-\d+-[a-z0-9-]+)((?:(?:[\s,/:_-]|and\b)+[Rr]\d+\.\d+)+)`)
+	`(srd\d+-[a-z0-9-]+)((?:(?:[\s,/:_-]|and\b)+[Rr]\d+\.\d+)+)`)
 
 // requirementID picks the individual ids out of the run that follows an SRD id.
 var requirementID = regexp.MustCompile(`[Rr]\d+\.\d+`)
+
+// srdSubdir is where the shared corpus format keeps software requirements.
+// The specification-critic loads them from here, so this path is not ours to
+// choose (declarative-agents agent-core/pkg/spec/corpus.go).
+const srdSubdir = "docs/specs/software-requirements"
 
 // checkerPackage is skipped by the coverage scan. This package's own tests
 // build documentation layers out of fixtures whose requirement ids exist only
@@ -156,9 +161,9 @@ func Check(root string) (Report, error) {
 		}
 	}
 
-	srdFiles, err := filepath.Glob(filepath.Join(docs, "srd", "*.yaml"))
+	srdFiles, err := filepath.Glob(filepath.Join(docs, "specs", "software-requirements", "srd*.yaml"))
 	if err != nil {
-		return report, fmt.Errorf("read docs/srd: %w", err)
+		return report, fmt.Errorf("read %s: %w", srdSubdir, err)
 	}
 	sort.Strings(srdFiles)
 	report.SRDFiles = len(srdFiles)
@@ -299,7 +304,7 @@ func checkEdges(root, docs string, pointers map[string][]string, srdFiles []stri
 }
 
 // roadMap is the part of docs/road-map.yaml this package reads. A unit is an
-// SRD id, which is also the file stem under docs/srd.
+// SRD id, which is also the file stem under docs/specs/software-requirements.
 type roadMap struct {
 	Releases []release `yaml:"releases"`
 }

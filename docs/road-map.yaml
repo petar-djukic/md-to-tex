@@ -1,10 +1,16 @@
-# Implementation roadmap for md-to-tex (GH-14).
+# Implementation roadmap for md-to-tex (GH-14, GH-26).
+#
+# Two readers share this file. The specification-critic reads the shared corpus
+# fields -- version, name, status, and use_cases -- and the repository's own
+# release-to-SRD edge check reads units, which the shared schema has no place
+# for. The gate and deferred_requirements are ours as well. Each reader ignores
+# what belongs to the other.
 #
 # Releases order the nine SRDs so each release ships something the consuming
 # pipeline can adopt on its own. The cut follows the dependency edges in the
 # SRDs rather than the adoption order GH-14 first proposed: the title page
 # converts its abstract and body through the chapter path
-# (srd-1-front-matter), so the chapter core precedes the front matter.
+# (srd001-front-matter), so the chapter core precedes the front matter.
 #
 # The audit holds this file to the layer: every unit a release names is an
 # SRD on disk, and every SRD is assigned to exactly one release.
@@ -17,50 +23,55 @@ meta:
 releases:
 
   - id: rel00.0
+    version: "00.0"
     name: Specification layer
     status: complete
     units: []
     gate: 'Completed before implementation opened: VISION, ARCHITECTURE, the nine SRDs, the audit holding their edges, and the cross-chapter label decision (GH-1 through GH-13).'
 
   - id: rel00.1
+    version: "00.1"
     name: Text core
     status: complete
     units:
-      - srd-2-renderer-core
-      - srd-3-escaping
-      - srd-6-citations
-      - srd-7-passthrough
+      - srd002-renderer-core
+      - srd003-escaping
+      - srd006-citations
+      - srd007-passthrough
     gate: 'none (opens implementation). Converts a prose chapter end to end: headings with derived labels and the collision check over label reports, paragraphs through the escaper, citations, and raw LaTeX passthrough. A chapter carrying a figure or table errors as an unmapped construct until rel00.2 lands.'
     deferred_requirements:
       # Two requirements of this release's SRDs describe subjects a later
       # release introduces, so no test here can name them honestly. They are
       # named by the release that brings their subject rather than left to
       # look like an oversight.
-      - id: srd-2-renderer-core R2.2
+      - id: srd002-renderer-core R2.2
         covered_by: rel00.2
-        reason: 'Names the graphics path and the float width thresholds Options must carry. The citation key set it also names is implemented and tested; the other two fields arrive with srd-4-figures and srd-5-tables.'
-      - id: srd-3-escaping R3.3
+        reason: 'Names the graphics path and the float width thresholds Options must carry. The citation key set it also names is implemented and tested; the other two fields arrive with srd004-figures and srd005-tables.'
+      - id: srd003-escaping R3.3
         covered_by: rel00.3
-        reason: 'States that escaping happens before substitution into a template and that templates escape nothing. The front-matter templates are srd-1-front-matter, which lands in rel00.3.'
+        reason: 'States that escaping happens before substitution into a template and that templates escape nothing. The front-matter templates are srd001-front-matter, which lands in rel00.3.'
 
   - id: rel00.2
+    version: "00.2"
     name: Floats
     status: pending
     units:
-      - srd-4-figures
-      - srd-5-tables
-      - srd-9-backport-compatibility
+      - srd004-figures
+      - srd005-tables
+      - srd009-backport-compatibility
     gate: 'rel00.1 complete (floats render inside the chapter walk). Figures and tables land together with the backport constraint verified across their output, because srd-9 is a bar on what the float renderers may emit rather than a component that can trail them.'
 
   - id: rel00.3
+    version: "00.3"
     name: Document shell
     status: pending
     units:
-      - srd-1-front-matter
-      - srd-8-container
+      - srd001-front-matter
+      - srd008-container
     gate: 'rel00.1 complete (the abstract and the title-page body convert through the chapter path). Front matter and the container land together; each references the other and neither is usable alone.'
 
   - id: rel01.0
+    version: "01.0"
     name: Pipeline adoption
     status: pending
     units: []

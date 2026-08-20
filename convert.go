@@ -8,7 +8,7 @@ import (
 //
 // The label report accompanies the fragment rather than replacing it: a
 // caller needs both, and the labels of a fragment that was never produced
-// describe nothing (srd-2-renderer-core R7.2).
+// describe nothing (srd002-renderer-core R7.2).
 type Result struct {
 	// Name is the chapter the fragment came from, as it was passed to
 	// Convert. Collisions reports it so a caller reading the collision knows
@@ -16,14 +16,14 @@ type Result struct {
 	Name string
 
 	// LaTeX is the chapter fragment. It carries no preamble and no document
-	// environment, because the container inputs it (srd-2-renderer-core R1.4,
-	// srd-8-container).
+	// environment, because the container inputs it (srd002-renderer-core R1.4,
+	// srd008-container).
 	LaTeX []byte
 
 	// Labels are the identifiers the fragment carries, in the order the
 	// chapter states them. Pass the results of several chapters to Collisions
 	// to find identifiers more than one of them claims
-	// (srd-2-renderer-core R7.1).
+	// (srd002-renderer-core R7.1).
 	Labels []Label
 }
 
@@ -31,7 +31,7 @@ type Result struct {
 // LaTeX fragment.
 //
 // The name appears in error messages and nowhere else; Convert opens no file
-// (srd-2-renderer-core R1.1). It holds no state between calls, so the same
+// (srd002-renderer-core R1.1). It holds no state between calls, so the same
 // source and Options produce byte-identical output every time and concurrent
 // calls do not interfere (R1.2).
 //
@@ -45,7 +45,7 @@ func Convert(source []byte, name string, options Options) (Result, error) {
 	})
 	if err != nil {
 		// A conversion that failed produced no fragment, so its labels
-		// describe nothing (srd-2-renderer-core R7.2).
+		// describe nothing (srd002-renderer-core R7.2).
 		return Result{}, err
 	}
 

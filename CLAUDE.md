@@ -10,8 +10,13 @@ one-to-one across formats, captions are written once and translate to
 metadata by template and escaping rather than through pandoc.
 
 Development is specification-driven. The docs layer under `docs/` (VISION,
-ARCHITECTURE, SRDs) is the source of requirements; read it before implementing,
-and do not write implementation code for a component whose SRD does not exist.
+ARCHITECTURE, and the specification corpus) is the source of requirements; read
+it before implementing, and do not write implementation code for a component
+whose SRD does not exist. The corpus follows the shared format the sibling
+repositories use -- requirement documents under
+`docs/specs/software-requirements/`, use cases and test suites beside them, and
+`docs/SPECIFICATIONS.yaml` indexing them -- so the specification-critic from
+petar-djukic/declarative-agents validates it, which is what `mage audit` runs.
 
 All work goes through issues and pull requests; never commit to `main`
 directly. The `.claude` directory is a relative symlink into

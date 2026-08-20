@@ -16,7 +16,7 @@ func convertChapter(t *testing.T, name, source string) mdtotex.Result {
 	return result
 }
 
-// TestConvertReportsItsLabels covers srd-2-renderer-core R7.1: every label the
+// TestConvertReportsItsLabels covers srd002-renderer-core R7.1: every label the
 // fragment carries, with its heading and whether the author stated it.
 func TestConvertReportsItsLabels(t *testing.T) {
 	const source = "# Introduction\n\nProse.\n\n## The frame {#sec:frame}\n"
@@ -37,7 +37,7 @@ func TestConvertReportsItsLabels(t *testing.T) {
 	}
 }
 
-// TestFailedConversionReportsNoLabels covers srd-2-renderer-core R7.2: the
+// TestFailedConversionReportsNoLabels covers srd002-renderer-core R7.2: the
 // labels of a fragment that was never produced describe nothing.
 func TestFailedConversionReportsNoLabels(t *testing.T) {
 	const source = "# Introduction\n\nProse.\n\n---\n"
@@ -51,7 +51,7 @@ func TestFailedConversionReportsNoLabels(t *testing.T) {
 	}
 }
 
-// TestCollisionsNameBothChapters covers srd-2-renderer-core R7.3 and AC8: two
+// TestCollisionsNameBothChapters covers srd002-renderer-core R7.3 and AC8: two
 // chapters deriving the same identifier are reported with both chapters and
 // the heading behind each, before anything is compiled.
 func TestCollisionsNameBothChapters(t *testing.T) {
@@ -81,7 +81,7 @@ func TestCollisionsNameBothChapters(t *testing.T) {
 	}
 }
 
-// TestCollisionsReportsNothingWhenChaptersAgree covers srd-2-renderer-core
+// TestCollisionsReportsNothingWhenChaptersAgree covers srd002-renderer-core
 // R7.3: distinct identifiers are not a collision.
 func TestCollisionsReportsNothingWhenChaptersAgree(t *testing.T) {
 	first := convertChapter(t, "01-introduction.md", "# Introduction\n\n## The frame\n")
@@ -92,7 +92,7 @@ func TestCollisionsReportsNothingWhenChaptersAgree(t *testing.T) {
 	}
 }
 
-// TestCollisionsTreatStatedAndDerivedAlike covers srd-2-renderer-core R7.5:
+// TestCollisionsTreatStatedAndDerivedAlike covers srd002-renderer-core R7.5:
 // both break the same compile, so both are reported the same way.
 func TestCollisionsTreatStatedAndDerivedAlike(t *testing.T) {
 	stated := convertChapter(t, "03-loop.md", "# The loop {#sec:shared}\n")
@@ -111,7 +111,7 @@ func TestCollisionsTreatStatedAndDerivedAlike(t *testing.T) {
 	}
 }
 
-// TestCollisionsReadsNothingAndReturnsCollisions covers srd-2-renderer-core
+// TestCollisionsReadsNothingAndReturnsCollisions covers srd002-renderer-core
 // R7.4, R7.6, and AC9: a function over reports held in memory, returning
 // collisions rather than an error.
 func TestCollisionsReadsNothingAndReturnsCollisions(t *testing.T) {
@@ -130,7 +130,7 @@ func TestCollisionsReadsNothingAndReturnsCollisions(t *testing.T) {
 	}
 }
 
-// TestLabelsDoNotDependOnTheirCompany covers srd-2-renderer-core R7.7 and
+// TestLabelsDoNotDependOnTheirCompany covers srd002-renderer-core R7.7 and
 // AC10: no chapter stem is prefixed, so a cross-chapter reference written as
 // raw LaTeX still points at the identifier the chapter emits.
 func TestLabelsDoNotDependOnTheirCompany(t *testing.T) {
@@ -153,7 +153,7 @@ func TestLabelsDoNotDependOnTheirCompany(t *testing.T) {
 	}
 }
 
-// TestCollisionsAcrossManyChapters covers srd-2-renderer-core R7.3 at the
+// TestCollisionsAcrossManyChapters covers srd002-renderer-core R7.3 at the
 // scale a manuscript reaches: one identifier shared by three chapters is one
 // collision naming all three.
 func TestCollisionsAcrossManyChapters(t *testing.T) {

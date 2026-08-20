@@ -3,7 +3,7 @@
 //
 // The walk owns dispatch and the output buffer, and every text node reaches
 // that buffer through the escaper or through raw content that declares itself
-// (srd-2-renderer-core R6.2). A construct outside the mapping is an error
+// (srd002-renderer-core R6.2). A construct outside the mapping is an error
 // naming its position rather than a silent omission, which is what keeps
 // markdown trustworthy as the source of truth (R6.4).
 package render
@@ -24,10 +24,10 @@ import (
 )
 
 // Config is what the walk needs from the caller's options
-// (srd-2-renderer-core R2.1, R2.2).
+// (srd002-renderer-core R2.1, R2.2).
 type Config struct {
 	// Citations is the set of keys a citation may name. A nil set turns
-	// validation off; an empty set holds no valid key (srd-6-citations R3.2).
+	// validation off; an empty set holds no valid key (srd006-citations R3.2).
 	Citations cite.KeySet
 }
 
@@ -40,7 +40,7 @@ type Label struct {
 }
 
 // Error is a conversion failure, naming the source, the line, and the
-// construct that failed (srd-2-renderer-core R1.3).
+// construct that failed (srd002-renderer-core R1.3).
 type Error struct {
 	Name      string
 	Line      int
@@ -57,7 +57,7 @@ func (e *Error) Error() string {
 }
 
 // markdown is the parser the walk reads from. Attributes are enabled because a
-// heading may state its identifier (srd-2-renderer-core R3.4); the table
+// heading may state its identifier (srd002-renderer-core R3.4); the table
 // extension is enabled so a pipe table arrives as a table node and is reported
 // as unmapped, rather than converting silently as prose (R6.4).
 var markdown = goldmark.New(
@@ -66,7 +66,7 @@ var markdown = goldmark.New(
 )
 
 // Convert renders one chapter of markdown as a LaTeX fragment. The name is
-// used only in error messages; no file is opened (srd-2-renderer-core R1.1).
+// used only in error messages; no file is opened (srd002-renderer-core R1.1).
 //
 // The fragment carries no preamble and no document environment (R1.4), ends
 // with exactly one newline, and does not begin with a blank line (R1.5).
@@ -99,7 +99,7 @@ type walker struct {
 	// written, for the runs goldmark splits across text nodes.
 	rawUntil int
 	// seen maps an identifier to the heading that claimed it, so a collision
-	// names both (srd-2-renderer-core R3.6).
+	// names both (srd002-renderer-core R3.6).
 	seen map[string]string
 }
 
@@ -167,7 +167,7 @@ func (w *walker) blocks(node ast.Node) error {
 	return nil
 }
 
-// block dispatches one block node (srd-2-renderer-core R6.1, R6.4).
+// block dispatches one block node (srd002-renderer-core R6.1, R6.4).
 func (w *walker) block(node ast.Node) error {
 	switch typed := node.(type) {
 	case *ast.Heading:
@@ -194,13 +194,13 @@ func (w *walker) block(node ast.Node) error {
 	case *ast.ThematicBreak:
 		return w.fail(w.offsetOf(typed), "thematic break", "no mapping; write it as raw LaTeX")
 	case *east.Table:
-		return w.fail(w.offsetOf(typed), "table", "tables render from rel00.2 (srd-5-tables)")
+		return w.fail(w.offsetOf(typed), "table", "tables render from rel00.2 (srd005-tables)")
 	}
 	return w.fail(w.offsetOf(node), node.Kind().String(), "no mapping for this construct")
 }
 
 // heading renders a sectioning command and the label that lets a raw
-// reference resolve (srd-2-renderer-core R3.1 through R3.7).
+// reference resolve (srd002-renderer-core R3.1 through R3.7).
 func (w *walker) heading(node *ast.Heading) error {
 	command, ok := sectioningCommand(node.Level)
 	if !ok {
@@ -230,7 +230,7 @@ func (w *walker) heading(node *ast.Heading) error {
 }
 
 // headingIdentifier returns the identifier the author stated, or the one
-// derived from the heading text (srd-2-renderer-core R3.4, R3.5).
+// derived from the heading text (srd002-renderer-core R3.4, R3.5).
 func headingIdentifier(node *ast.Heading, heading string) (string, bool) {
 	if attribute, ok := node.AttributeString("id"); ok {
 		switch stated := attribute.(type) {
@@ -244,7 +244,7 @@ func headingIdentifier(node *ast.Heading, heading string) (string, bool) {
 }
 
 // paragraph renders inline content followed by a blank line
-// (srd-2-renderer-core R4.1).
+// (srd002-renderer-core R4.1).
 func (w *walker) paragraph(node *ast.Paragraph) error {
 	if err := w.inlines(node); err != nil {
 		return err
@@ -254,7 +254,7 @@ func (w *walker) paragraph(node *ast.Paragraph) error {
 }
 
 // list renders itemize or enumerate, one item command per item
-// (srd-2-renderer-core R5.1, R5.2, R5.5).
+// (srd002-renderer-core R5.1, R5.2, R5.5).
 func (w *walker) list(node *ast.List) error {
 	environment := "itemize"
 	if node.IsOrdered() {
@@ -283,7 +283,7 @@ func (w *walker) closeEnvironment(environment string) {
 	w.out.WriteString("\n" + `\end{` + environment + "}\n\n")
 }
 
-// blockquote renders the quote environment (srd-2-renderer-core R5.3).
+// blockquote renders the quote environment (srd002-renderer-core R5.3).
 func (w *walker) blockquote(node *ast.Blockquote) error {
 	w.out.WriteString("\\begin{quote}\n")
 	if err := w.blocks(node); err != nil {
@@ -294,7 +294,7 @@ func (w *walker) blockquote(node *ast.Blockquote) error {
 }
 
 // verbatim writes a code block's text unescaped and unmodified
-// (srd-2-renderer-core R5.4).
+// (srd002-renderer-core R5.4).
 func (w *walker) verbatim(body string) error {
 	w.out.WriteString("\\begin{verbatim}\n")
 	w.out.WriteString(body)
@@ -306,7 +306,7 @@ func (w *walker) verbatim(body string) error {
 }
 
 // htmlBlock drops a comment and reports anything else
-// (srd-2-renderer-core R6.3).
+// (srd002-renderer-core R6.3).
 func (w *walker) htmlBlock(node *ast.HTMLBlock) error {
 	if node.HTMLBlockType == ast.HTMLBlockType2 {
 		return nil

@@ -2,7 +2,7 @@ package latex
 
 import "testing"
 
-// TestEscapeReplacesTheTenSpecials covers srd-3-escaping R1.1 and R1.3 with
+// TestEscapeReplacesTheTenSpecials covers srd003-escaping R1.1 and R1.3 with
 // the example the SRD states, and AC1: nothing outside the ten changes.
 func TestEscapeReplacesTheTenSpecials(t *testing.T) {
 	const source = `100% of the R&D budget, item_one, and $x$ in {braces}`
@@ -13,7 +13,7 @@ func TestEscapeReplacesTheTenSpecials(t *testing.T) {
 	}
 }
 
-// TestEscapeReplacesEachSpecialOnce covers srd-3-escaping R1.1 character by
+// TestEscapeReplacesEachSpecialOnce covers srd003-escaping R1.1 character by
 // character, so a table entry that goes missing names itself.
 func TestEscapeReplacesEachSpecialOnce(t *testing.T) {
 	cases := []struct {
@@ -41,7 +41,7 @@ func TestEscapeReplacesEachSpecialOnce(t *testing.T) {
 	}
 }
 
-// TestEscapeIsSinglePass covers srd-3-escaping R1.2 and AC2: the backslashes
+// TestEscapeIsSinglePass covers srd003-escaping R1.2 and AC2: the backslashes
 // the replacements introduce are not themselves escaped.
 func TestEscapeIsSinglePass(t *testing.T) {
 	const source = `A backslash \ and a tilde ~ and a caret ^`
@@ -52,7 +52,7 @@ func TestEscapeIsSinglePass(t *testing.T) {
 	}
 }
 
-// TestEscapePassesUnicodeThrough covers srd-3-escaping R2.1, R2.2, and R2.3,
+// TestEscapePassesUnicodeThrough covers srd003-escaping R2.1, R2.2, and R2.3,
 // and AC3. R2.2 is the xelatex assumption that makes passing Unicode through
 // safe: these strings compile as written under a Unicode-aware engine and are
 // what the corpus actually carries.
@@ -71,7 +71,7 @@ func TestEscapePassesUnicodeThrough(t *testing.T) {
 	}
 }
 
-// TestEscapeMatchesTheReferenceImplementation covers srd-3-escaping R1.1 and AC4: the
+// TestEscapeMatchesTheReferenceImplementation covers srd003-escaping R1.1 and AC4: the
 // output matches paperkit's escapeLaTeX, which the manuscripts are written
 // against. The fixtures are the title and author fields from paperkit's own
 // frontmatter tests.
@@ -112,7 +112,7 @@ func TestEscapeMatchesTheReferenceImplementation(t *testing.T) {
 	}
 }
 
-// TestEscapeLeavesOrdinaryPunctuationAlone covers srd-3-escaping R1.3: the at
+// TestEscapeLeavesOrdinaryPunctuationAlone covers srd003-escaping R1.3: the at
 // sign, brackets, and parentheses are not LaTeX markup and are not escaped.
 func TestEscapeLeavesOrdinaryPunctuationAlone(t *testing.T) {
 	const source = `[@key] (parenthesised) <angled> "quoted" 'single' a|b +c= -d/e`
@@ -122,7 +122,7 @@ func TestEscapeLeavesOrdinaryPunctuationAlone(t *testing.T) {
 	}
 }
 
-// TestEscapeIsAPlainFunction covers srd-3-escaping R3.1: a pure function from
+// TestEscapeIsAPlainFunction covers srd003-escaping R3.1: a pure function from
 // a string to a string, with no options argument and no error return. The
 // assignment fails to compile if the signature grows either.
 func TestEscapeIsAPlainFunction(t *testing.T) {

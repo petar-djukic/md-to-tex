@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// TestInlineControlSequencesPassThrough covers srd-7-passthrough R2.1, R2.4,
+// TestInlineControlSequencesPassThrough covers srd007-passthrough R2.1, R2.4,
 // and AC2 with the example the SRD states: the commands survive, the prose
 // around them escapes.
 func TestInlineControlSequencesPassThrough(t *testing.T) {
@@ -17,8 +17,8 @@ func TestInlineControlSequencesPassThrough(t *testing.T) {
 	}
 }
 
-// TestRawAndEscapedTextShareAParagraph covers srd-7-passthrough R2.4, R3.1,
-// R4.1, srd-3-escaping R3.4, and AC2 together: raw content is written to the
+// TestRawAndEscapedTextShareAParagraph covers srd007-passthrough R2.4, R3.1,
+// R4.1, srd003-escaping R3.4, and AC2 together: raw content is written to the
 // buffer directly and never reaches the escaper, while the prose beside it
 // escapes.
 func TestRawAndEscapedTextShareAParagraph(t *testing.T) {
@@ -30,7 +30,7 @@ func TestRawAndEscapedTextShareAParagraph(t *testing.T) {
 	}
 }
 
-// TestNestedGroupsSurviveWhole covers srd-7-passthrough R2.2: a group closes
+// TestNestedGroupsSurviveWhole covers srd007-passthrough R2.2: a group closes
 // at the brace that balances its opening, so an argument holding braces is not
 // cut short.
 func TestNestedGroupsSurviveWhole(t *testing.T) {
@@ -48,7 +48,7 @@ func TestNestedGroupsSurviveWhole(t *testing.T) {
 	}
 }
 
-// TestUnbalancedGroupIsAnError covers srd-7-passthrough R2.3 and AC3: the
+// TestUnbalancedGroupIsAnError covers srd007-passthrough R2.3 and AC3: the
 // error names the command and the line rather than letting LaTeX report it
 // somewhere else entirely.
 func TestUnbalancedGroupIsAnError(t *testing.T) {
@@ -62,7 +62,7 @@ func TestUnbalancedGroupIsAnError(t *testing.T) {
 	}
 }
 
-// TestBackslashInProseEscapes covers srd-7-passthrough R3.1 and AC5: a
+// TestBackslashInProseEscapes covers srd007-passthrough R3.1 and AC5: a
 // backslash before anything but an ASCII letter is prose.
 func TestBackslashInProseEscapes(t *testing.T) {
 	cases := []struct {
@@ -81,7 +81,7 @@ func TestBackslashInProseEscapes(t *testing.T) {
 	}
 }
 
-// TestBackslashInCodeIsCode covers srd-7-passthrough R3.2: a backslash inside
+// TestBackslashInCodeIsCode covers srd007-passthrough R3.2: a backslash inside
 // inline code or a code block is neither raw nor escaped by this path.
 func TestBackslashInCodeIsCode(t *testing.T) {
 	got := convert(t, "The command `\\ref{x}` in prose.\n")
@@ -98,8 +98,8 @@ func TestBackslashInCodeIsCode(t *testing.T) {
 	}
 }
 
-// TestRawBlockContentIsNotWalked covers srd-7-passthrough R1.5, R3.3, R4.2,
-// srd-6-citations R4.4, and AC4: a citation inside a raw block stays as
+// TestRawBlockContentIsNotWalked covers srd007-passthrough R1.5, R3.3, R4.2,
+// srd006-citations R4.4, and AC4: a citation inside a raw block stays as
 // written, and an image inside one does not become a float.
 func TestRawBlockContentIsNotWalked(t *testing.T) {
 	const source = "```{=latex}\n\\cite{du-2023} and ![A diagram](fig/diagram.pdf)\n```\n"
@@ -110,7 +110,7 @@ func TestRawBlockContentIsNotWalked(t *testing.T) {
 	}
 }
 
-// TestRawBlockKeepsItsInfoStringOut covers srd-7-passthrough R1.1, R1.2, and
+// TestRawBlockKeepsItsInfoStringOut covers srd007-passthrough R1.1, R1.2, and
 // AC1: the content reaches the fragment unescaped, without the fence.
 func TestRawBlockKeepsItsInfoStringOut(t *testing.T) {
 	const source = "```{=latex}\n\\begin{IEEEkeywords}\nAutogenic systems, 100% agents.\n\\end{IEEEkeywords}\n```\n"
@@ -124,7 +124,7 @@ func TestRawBlockKeepsItsInfoStringOut(t *testing.T) {
 	}
 }
 
-// TestOtherInfoStringsAreVerbatim covers srd-7-passthrough R1.4 and AC6: the
+// TestOtherInfoStringsAreVerbatim covers srd007-passthrough R1.4 and AC6: the
 // distinction is the info string alone.
 func TestOtherInfoStringsAreVerbatim(t *testing.T) {
 	got := convert(t, "```go\n\\ref{x}\n```\n")
@@ -134,7 +134,7 @@ func TestOtherInfoStringsAreVerbatim(t *testing.T) {
 	}
 }
 
-// TestUnknownCommandsAreNotChecked covers srd-7-passthrough R3.5: recognition
+// TestUnknownCommandsAreNotChecked covers srd007-passthrough R3.5: recognition
 // is textual, so a command this library never heard of passes through and
 // LaTeX is left to report it.
 func TestUnknownCommandsAreNotChecked(t *testing.T) {
@@ -145,7 +145,7 @@ func TestUnknownCommandsAreNotChecked(t *testing.T) {
 	}
 }
 
-// TestEnvironmentsWrittenInProseConvertAround covers srd-7-passthrough
+// TestEnvironmentsWrittenInProseConvertAround covers srd007-passthrough
 // non-goals: a begin command and its end are two control sequences with prose
 // between them, and the prose converts normally.
 func TestEnvironmentsWrittenInProseConvertAround(t *testing.T) {
@@ -160,14 +160,14 @@ func TestEnvironmentsWrittenInProseConvertAround(t *testing.T) {
 	}
 }
 
-// TestHardBreakIsNotAControlSequence covers srd-7-passthrough R3.4.
+// TestHardBreakIsNotAControlSequence covers srd007-passthrough R3.4.
 func TestHardBreakIsNotAControlSequence(t *testing.T) {
 	if got := convert(t, "first line  \nsecond line\n"); got != "first line\\\\\nsecond line\n" {
 		t.Errorf("Convert() = %q", got)
 	}
 }
 
-// TestRawLaTeXOwnsWhatItCarries covers srd-7-passthrough R4.4: raw LaTeX
+// TestRawLaTeXOwnsWhatItCarries covers srd007-passthrough R4.4: raw LaTeX
 // carrying a float and a caption is not held to the float requirements, and
 // reaches the fragment as the author wrote it.
 func TestRawLaTeXOwnsWhatItCarries(t *testing.T) {

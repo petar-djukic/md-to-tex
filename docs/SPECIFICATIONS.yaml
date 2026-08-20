@@ -1,0 +1,102 @@
+# Copyright (c) 2026 Petar Djukic. All rights reserved. SPDX-License-Identifier: MIT
+
+id: md-to-tex-specifications
+title: md-to-tex Specification Index
+
+overview: |
+  This index opens the specification corpus for the library. The corpus is the
+  requirements of record: docs/VISION.yaml states what md-to-tex is for and
+  docs/ARCHITECTURE.yaml decomposes it into components, and each component
+  names the requirement document below that governs it.
+
+  Nine documents cover the conversion. Three carry the text path -- the
+  renderer core, the escaper, and the citation extension -- and two more carry
+  the floats. Raw-LaTeX passthrough is the route around the mapping, the
+  front-matter renderer and the container generator make a compilable
+  document, and backport compatibility is the bar the emitting documents
+  answer to rather than a component of its own.
+
+  The road map assigns each document to the release that implements it. The
+  text core landed in rel00.1; the floats, the document shell, and pipeline
+  adoption follow.
+
+roadmap_summary:
+  - version: "00.0"
+    name: Specification layer
+    status: done
+    scope: |
+      no requirement documents of its own.
+  - version: "00.1"
+    name: Text core
+    status: done
+    scope: |
+      srd002-renderer-core, srd003-escaping, srd006-citations, srd007-passthrough.
+  - version: "00.2"
+    name: Floats
+    status: pending
+    scope: |
+      srd004-figures, srd005-tables, srd009-backport-compatibility.
+  - version: "00.3"
+    name: Document shell
+    status: pending
+    scope: |
+      srd001-front-matter, srd008-container.
+  - version: "01.0"
+    name: Pipeline adoption
+    status: pending
+    scope: |
+      no requirement documents of its own.
+
+srd_index:
+  - id: srd001-front-matter
+    title: Front-matter Renderer
+    path: docs/specs/software-requirements/srd001-front-matter.yaml
+    summary: |
+      Title-page metadata renders to the front-matter fragment by template and escaping: title, subtitle, author as a scalar or a list, and an abstract taken from either place the manuscripts put it. No pandoc in this path.
+  - id: srd002-renderer-core
+    title: Renderer Core
+    path: docs/specs/software-requirements/srd002-renderer-core.yaml
+    summary: |
+      The goldmark walk and its dispatch: sectioning commands with stated or derived labels, paragraphs and inline constructs through the escaper, lists, quotes, verbatim, positioned errors for anything outside the mapping, and the label reports the cross-chapter collision check reads.
+  - id: srd003-escaping
+    title: Escaper
+    path: docs/specs/software-requirements/srd003-escaping.yaml
+    summary: |
+      The ten characters LaTeX treats as markup, replaced in a single pass, with Unicode passed through untouched on the xelatex assumption. One implementation, shared by the template path and the node renderers.
+  - id: srd004-figures
+    title: Figure Handling
+    path: docs/specs/software-requirements/srd004-figures.yaml
+    summary: |
+      An image block with alt text and an identifier renders as a figure float carrying the include, the caption, and the label, with the file name identical across the two formats and the wide class selecting the two-column variant.
+  - id: srd005-tables
+    title: Table Handling
+    path: docs/specs/software-requirements/srd005-tables.yaml
+    summary: |
+      A pipe table and its caption line render as a tabularx float. The column weighting and the two-column decision are stated with their inputs and thresholds; longtable is never emitted.
+  - id: srd006-citations
+    title: Citation Extension
+    path: docs/specs/software-requirements/srd006-citations.yaml
+    summary: |
+      The bracketed citation syntax parses as a goldmark inline node and renders as a cite command, with keys validated against a caller-supplied set where one is given.
+  - id: srd007-passthrough
+    title: Raw-LaTeX Passthrough
+    path: docs/specs/software-requirements/srd007-passthrough.yaml
+    summary: |
+      Fenced raw-LaTeX blocks and inline control sequences reach the fragment unescaped, which is the pressure valve that keeps the mapping bounded to what the manuscripts use.
+  - id: srd008-container
+    title: Container Generator
+    path: docs/specs/software-requirements/srd008-container.yaml
+    summary: |
+      The container document: class and options, preamble include, the input list in roster order, graphics path, and bibliography. It holds no content, so regenerating it on a roster change disturbs nothing.
+  - id: srd009-backport-compatibility
+    title: Backport Compatibility
+    path: docs/specs/software-requirements/srd009-backport-compatibility.yaml
+    summary: |
+      The constraint the emitting components answer to: every construct must survive the pipeline's LaTeX reader well enough that a caption or prose edit comes back as a prose change rather than a raw block.
+
+coverage_notes: |
+  Requirement coverage is the test-evidence audit's to report: the test suites
+  under docs/specs/test-suites/ carry the claims and name the Go test behind
+  each. Two requirements are recorded in docs/road-map.yaml as deferred to the
+  release that introduces their subject, srd002-renderer-core R2.2 to rel00.2
+  and srd003-escaping R3.3 to rel00.3.

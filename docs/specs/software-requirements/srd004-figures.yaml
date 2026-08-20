@@ -1,4 +1,4 @@
-id: srd-4-figures
+id: srd004-figures
 title: Figure Handling
 
 problem: |
@@ -33,9 +33,9 @@ requirements:
     title: Float emission
     items:
       - R2.1: 'The float is emitted as the figure environment with the placement specifier for the top of a page, then a centering command, then the include, then the caption, then the label, then the environment end - each on its own line, in that order.'
-      - R2.2: The caption argument is the alt text rendered as inline content through the renderer core, so emphasis and escaping behave as they do in a paragraph (srd-2-renderer-core, srd-3-escaping).
+      - R2.2: The caption argument is the alt text rendered as inline content through the renderer core, so emphasis and escaping behave as they do in a paragraph (srd002-renderer-core, srd003-escaping).
       - R2.3: The label argument is the identifier from the attribute block, emitted verbatim. Identifiers are not normalized, slugged, or prefixed.
-      - R2.4: The caption and label are emitted as plain commands with nothing between them and the float, and the include is not wrapped in a sizing environment. Adjustbox and the counter-stepping caption idiom the pandoc filter uses are forbidden (srd-9-backport-compatibility).
+      - R2.4: The caption and label are emitted as plain commands with nothing between them and the float, and the include is not wrapped in a sizing environment. Adjustbox and the counter-stepping caption idiom the pandoc filter uses are forbidden (srd009-backport-compatibility).
     examples:
       - markdown: |
           ![Autonomy levels graded by who writes the specification.](fig/01-kinds-to-levels.pdf){#fig:kinds-to-levels}
@@ -52,7 +52,7 @@ requirements:
       - R3.1: A figure with no wide class renders in the figure environment at the width of one column. A figure carrying the wide class renders in the starred figure environment at the width of the text block.
       - R3.2: A width attribute states a fraction of the enclosing measure. The include width becomes that fraction of the column width for a single-column float and that fraction of the text width for a two-column float.
       - R3.3: A width attribute outside the range greater than zero through one is an error naming the value.
-      - R3.4: 'The default include width is the full enclosing measure. This differs from the pandoc filter, which bounds the include with an adjustbox maximum: the plain include is what the manuscripts hand-write and what the backport reads (srd-9-backport-compatibility), and a figure that must not be enlarged states a width attribute.'
+      - R3.4: 'The default include width is the full enclosing measure. This differs from the pandoc filter, which bounds the include with an adjustbox maximum: the plain include is what the manuscripts hand-write and what the backport reads (srd009-backport-compatibility), and a figure that must not be enlarged states a width attribute.'
     examples:
       - markdown: |
           ![The closed loop runs the algorithm its specification records.](fig/00-concept-structure.pdf){#fig:concept-structure .wide}
@@ -75,9 +75,9 @@ requirements:
   R4:
     title: File-name correspondence
     items:
-      - R4.1: 'The include argument is the target''s base name with its extension intact. Only the directory prefix is dropped: the container supplies it through a graphics path (srd-8-container).'
+      - R4.1: 'The include argument is the target''s base name with its extension intact. Only the directory prefix is dropped: the container supplies it through a graphics path (srd008-container).'
       - R4.2: The extension is never rewritten. A markdown reference to a PDF includes that PDF, which is what Obsidian embeds and what the compile needs.
-      - R4.3: The renderer does not check that the file exists. The caller compiles the figures and knows where they are; a conversion that reads the file system violates srd-2-renderer-core R1.1.
+      - R4.3: The renderer does not check that the file exists. The caller compiles the figures and knows where they are; a conversion that reads the file system violates srd002-renderer-core R1.1.
       - R4.4: A target carrying no directory prefix is included as written. A target that is an absolute path or a remote URL is an error naming the target.
 
 non_goals:
@@ -102,3 +102,9 @@ acceptance_criteria:
   - id: AC5
     criterion: No emitted figure contains an adjustbox environment or any wrapper between the float and its caption.
     traces: [R2.4]
+
+depends_on:
+  - srd_id: srd002-renderer-core
+    symbols_used: [R1, R4]
+  - srd_id: srd003-escaping
+    symbols_used: [R1]

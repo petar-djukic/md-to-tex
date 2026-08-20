@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// TestOneReplacementTable covers srd-3-escaping R3.2 and AC5: exactly one
+// TestOneReplacementTable covers srd003-escaping R3.2 and AC5: exactly one
 // implementation of the replacement table exists, so the front-matter path and
 // the node renderers cannot drift apart.
 //

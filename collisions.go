@@ -12,7 +12,7 @@ type Carrier struct {
 //
 // LaTeX reports this as a duplicate label pointing at whichever chapter came
 // second in the container's input list, which names neither the chapter that
-// caused it nor the heading (srd-2-renderer-core R7.3).
+// caused it nor the heading (srd002-renderer-core R7.3).
 type Collision struct {
 	Identifier string
 	Carriers   []Carrier
@@ -20,7 +20,7 @@ type Collision struct {
 
 // Collisions returns every identifier that appears in more than one of the
 // given results, naming each chapter that carries it and the heading behind
-// it (srd-2-renderer-core R7.3).
+// it (srd002-renderer-core R7.3).
 //
 // It is a function over the reports conversion returned, not over fragments or
 // files: it opens nothing, so a caller holding conversions in memory calls it
@@ -33,7 +33,7 @@ type Collision struct {
 // derived ones are. Both break the same compile (R7.5).
 //
 // Collisions within a single chapter do not reach here: conversion fails on
-// them, naming both headings (srd-2-renderer-core R3.6).
+// them, naming both headings (srd002-renderer-core R3.6).
 func Collisions(results ...Result) []Collision {
 	carriers := make(map[string][]Carrier)
 	order := make([]string, 0, len(results))

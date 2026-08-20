@@ -21,19 +21,19 @@ const validArchitecture = `id: architecture-test
 title: Test Architecture
 components:
   - name: Escaper
-    srd: docs/srd/srd-1-escaping.yaml
+    srd: docs/specs/software-requirements/srd001-escaping.yaml
 interfaces:
   - name: Conversion
-    srd: docs/srd/srd-1-escaping.yaml
+    srd: docs/specs/software-requirements/srd001-escaping.yaml
 `
 
 const validRoadMap = `releases:
   - id: rel00.1
     units:
-      - srd-1-escaping
+      - srd001-escaping
 `
 
-const validSRD = `id: srd-1-escaping
+const validSRD = `id: srd001-escaping
 title: Escaper
 requirements:
   R1:
@@ -51,14 +51,14 @@ func write(t *testing.T, l layout) string {
 	t.Helper()
 	root := t.TempDir()
 	docs := filepath.Join(root, "docs")
-	if err := os.MkdirAll(filepath.Join(docs, "srd"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(docs, "specs", "software-requirements"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	writeFile(t, filepath.Join(docs, "VISION.yaml"), "id: vision-test\ntitle: Test Vision\n")
 	writeFile(t, filepath.Join(docs, "ARCHITECTURE.yaml"), l.architecture)
 	writeFile(t, filepath.Join(docs, "road-map.yaml"), l.roadMap)
 	for name, body := range l.srds {
-		writeFile(t, filepath.Join(docs, "srd", name), body)
+		writeFile(t, filepath.Join(docs, "specs", "software-requirements", name), body)
 	}
 	for name, body := range l.tests {
 		path := filepath.Join(root, name)
@@ -81,7 +81,7 @@ func valid() layout {
 	return layout{
 		architecture: validArchitecture,
 		roadMap:      validRoadMap,
-		srds:         map[string]string{"srd-1-escaping.yaml": validSRD},
+		srds:         map[string]string{"srd001-escaping.yaml": validSRD},
 	}
 }
 
@@ -101,18 +101,18 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 			build: func() layout {
 				l := valid()
 				l.architecture = strings.Replace(l.architecture,
-					"srd: docs/srd/srd-1-escaping.yaml\ninterfaces",
-					"srd: docs/srd/srd-2-absent.yaml\ninterfaces", 1)
+					"srd: docs/specs/software-requirements/srd001-escaping.yaml\ninterfaces",
+					"srd: docs/specs/software-requirements/srd002-absent.yaml\ninterfaces", 1)
 				return l
 			},
-			want: "srd-2-absent.yaml is named by Escaper but does not exist",
+			want: "srd002-absent.yaml is named by Escaper but does not exist",
 		},
 		{
 			name: "orphan specification",
 			build: func() layout {
 				l := valid()
-				l.srds["srd-9-unclaimed.yaml"] = strings.Replace(validSRD,
-					"id: srd-1-escaping", "id: srd-9-unclaimed", 1)
+				l.srds["srd009-unclaimed.yaml"] = strings.Replace(validSRD,
+					"id: srd001-escaping", "id: srd009-unclaimed", 1)
 				return l
 			},
 			want: "no component or interface in ARCHITECTURE.yaml names this file",
@@ -121,7 +121,7 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 			name: "duplicate mapping key",
 			build: func() layout {
 				l := valid()
-				l.srds["srd-1-escaping.yaml"] = validSRD + "title: Escaper again\n"
+				l.srds["srd001-escaping.yaml"] = validSRD + "title: Escaper again\n"
 				return l
 			},
 			want: `mapping key "title" already defined`,
@@ -140,8 +140,8 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 			build: func() layout {
 				l := valid()
 				l.architecture = strings.Replace(l.architecture,
-					"  - name: Escaper\n    srd: docs/srd/srd-1-escaping.yaml\n",
-					"  - name: Escaper\n    srd: docs/srd/srd-1-escaping.yaml\n  - name: Tables\n", 1)
+					"  - name: Escaper\n    srd: docs/specs/software-requirements/srd001-escaping.yaml\n",
+					"  - name: Escaper\n    srd: docs/specs/software-requirements/srd001-escaping.yaml\n  - name: Tables\n", 1)
 				return l
 			},
 			want: `component "Tables" names no srd`,
@@ -150,8 +150,8 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 			name: "id disagrees with the file name",
 			build: func() layout {
 				l := valid()
-				l.srds["srd-1-escaping.yaml"] = strings.Replace(validSRD,
-					"id: srd-1-escaping", "id: srd-1-escapes", 1)
+				l.srds["srd001-escaping.yaml"] = strings.Replace(validSRD,
+					"id: srd001-escaping", "id: srd-1-escapes", 1)
 				return l
 			},
 			want: `id "srd-1-escapes" does not match the file name`,
@@ -160,7 +160,7 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 			name: "criterion traces to a requirement that does not exist",
 			build: func() layout {
 				l := valid()
-				l.srds["srd-1-escaping.yaml"] = strings.Replace(validSRD,
+				l.srds["srd001-escaping.yaml"] = strings.Replace(validSRD,
 					"traces: [R1.1, R1.2]", "traces: [R1.1, R4.7]", 1)
 				return l
 			},
@@ -171,43 +171,43 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 			build: func() layout {
 				l := valid()
 				l.tests = map[string]string{
-					"convert_test.go": "package convert\n\n// Covers srd-1-escaping R1.1, R1.2, and R9.9.\nfunc TestNothing() {}\n",
+					"convert_test.go": "package convert\n\n// Covers srd001-escaping R1.1, R1.2, and R9.9.\nfunc TestNothing() {}\n",
 				}
 				return l
 			},
-			want: "names srd-1-escaping R9.9, which is not a requirement in the docs layer",
+			want: "names srd001-escaping R9.9, which is not a requirement in the docs layer",
 		},
 		{
 			name: "requirement ids wrapped across comment lines still count",
 			build: func() layout {
 				l := valid()
 				l.tests = map[string]string{
-					"convert_test.go": "package convert\n\n// Covers srd-1-escaping R1.1, R1.2, and\n// R9.9 across two lines.\nfunc TestNothing() {}\n",
+					"convert_test.go": "package convert\n\n// Covers srd001-escaping R1.1, R1.2, and\n// R9.9 across two lines.\nfunc TestNothing() {}\n",
 				}
 				return l
 			},
-			want: "names srd-1-escaping R9.9, which is not a requirement in the docs layer",
+			want: "names srd001-escaping R9.9, which is not a requirement in the docs layer",
 		},
 		{
 			name: "test names a requirement that does not exist",
 			build: func() layout {
 				l := valid()
 				l.tests = map[string]string{
-					"convert_test.go": "package convert\n\n// srd-1-escaping R8.3 is not a requirement.\nfunc TestNothing() {}\n",
+					"convert_test.go": "package convert\n\n// srd001-escaping R8.3 is not a requirement.\nfunc TestNothing() {}\n",
 				}
 				return l
 			},
-			want: "names srd-1-escaping R8.3, which is not a requirement in the docs layer",
+			want: "names srd001-escaping R8.3, which is not a requirement in the docs layer",
 		},
 		{
 			name: "release schedules a specification nobody wrote",
 			build: func() layout {
 				l := valid()
 				l.roadMap = strings.Replace(l.roadMap,
-					"- srd-1-escaping", "- srd-1-escaping\n      - srd-2-absent", 1)
+					"- srd001-escaping", "- srd001-escaping\n      - srd002-absent", 1)
 				return l
 			},
-			want: "release rel00.1 names srd-2-absent, which is not an SRD on disk",
+			want: "release rel00.1 names srd002-absent, which is not an SRD on disk",
 		},
 		{
 			name: "specification no release schedules",
@@ -216,16 +216,16 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 				l.roadMap = "releases:\n  - id: rel00.1\n    units: []\n"
 				return l
 			},
-			want: "srd-1-escaping is assigned to no release",
+			want: "srd001-escaping is assigned to no release",
 		},
 		{
 			name: "specification scheduled twice",
 			build: func() layout {
 				l := valid()
-				l.roadMap += "  - id: rel00.2\n    units:\n      - srd-1-escaping\n"
+				l.roadMap += "  - id: rel00.2\n    units:\n      - srd001-escaping\n"
 				return l
 			},
-			want: "srd-1-escaping is assigned to rel00.1 and rel00.2; exactly one release owns an SRD",
+			want: "srd001-escaping is assigned to rel00.1 and rel00.2; exactly one release owns an SRD",
 		},
 		{
 			name: "duplicate key in the roadmap",
@@ -266,7 +266,7 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 func TestCoverageCountsWithoutFailing(t *testing.T) {
 	l := valid()
 	l.tests = map[string]string{
-		"convert_test.go": "package convert\n\n// Covers srd-1-escaping R1.1.\nfunc TestEscape() {}\n",
+		"convert_test.go": "package convert\n\n// Covers srd001-escaping R1.1.\nfunc TestEscape() {}\n",
 	}
 	report, err := Check(write(t, l))
 	if err != nil {
@@ -281,8 +281,8 @@ func TestCoverageCountsWithoutFailing(t *testing.T) {
 	if report.Covered != 1 {
 		t.Errorf("Covered = %d, want 1", report.Covered)
 	}
-	if len(report.Uncovered) != 1 || report.Uncovered[0] != "srd-1-escaping R1.2" {
-		t.Errorf("Uncovered = %v, want [srd-1-escaping R1.2]", report.Uncovered)
+	if len(report.Uncovered) != 1 || report.Uncovered[0] != "srd001-escaping R1.2" {
+		t.Errorf("Uncovered = %v, want [srd001-escaping R1.2]", report.Uncovered)
 	}
 	if !strings.Contains(report.Summary(), "1 of 2 requirements") {
 		t.Errorf("summary does not carry the coverage line:\n%s", report.Summary())
