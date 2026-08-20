@@ -8,10 +8,11 @@ import (
 )
 
 // layout is a documentation layer written into a temporary directory: one
-// architecture file and the SRDs it points at. Cases mutate it to produce the
-// state under test.
+// architecture file, the SRDs it points at, and the roadmap that schedules
+// them. Cases mutate it to produce the state under test.
 type layout struct {
 	architecture string
+	roadMap      string
 	srds         map[string]string
 	tests        map[string]string
 }
@@ -24,6 +25,12 @@ components:
 interfaces:
   - name: Conversion
     srd: docs/srd/srd-1-escaping.yaml
+`
+
+const validRoadMap = `releases:
+  - id: rel00.1
+    units:
+      - srd-1-escaping
 `
 
 const validSRD = `id: srd-1-escaping
@@ -49,6 +56,7 @@ func write(t *testing.T, l layout) string {
 	}
 	writeFile(t, filepath.Join(docs, "VISION.yaml"), "id: vision-test\ntitle: Test Vision\n")
 	writeFile(t, filepath.Join(docs, "ARCHITECTURE.yaml"), l.architecture)
+	writeFile(t, filepath.Join(docs, "road-map.yaml"), l.roadMap)
 	for name, body := range l.srds {
 		writeFile(t, filepath.Join(docs, "srd", name), body)
 	}
@@ -72,6 +80,7 @@ func writeFile(t *testing.T, path, body string) {
 func valid() layout {
 	return layout{
 		architecture: validArchitecture,
+		roadMap:      validRoadMap,
 		srds:         map[string]string{"srd-1-escaping.yaml": validSRD},
 	}
 }
@@ -167,6 +176,43 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 				return l
 			},
 			want: "names srd-1-escaping R8.3, which is not a requirement in the docs layer",
+		},
+		{
+			name: "release schedules a specification nobody wrote",
+			build: func() layout {
+				l := valid()
+				l.roadMap = strings.Replace(l.roadMap,
+					"- srd-1-escaping", "- srd-1-escaping\n      - srd-2-absent", 1)
+				return l
+			},
+			want: "release rel00.1 names srd-2-absent, which is not an SRD on disk",
+		},
+		{
+			name: "specification no release schedules",
+			build: func() layout {
+				l := valid()
+				l.roadMap = "releases:\n  - id: rel00.1\n    units: []\n"
+				return l
+			},
+			want: "srd-1-escaping is assigned to no release",
+		},
+		{
+			name: "specification scheduled twice",
+			build: func() layout {
+				l := valid()
+				l.roadMap += "  - id: rel00.2\n    units:\n      - srd-1-escaping\n"
+				return l
+			},
+			want: "srd-1-escaping is assigned to rel00.1 and rel00.2; exactly one release owns an SRD",
+		},
+		{
+			name: "duplicate key in the roadmap",
+			build: func() layout {
+				l := valid()
+				l.roadMap += "releases: []\n"
+				return l
+			},
+			want: `mapping key "releases" already defined`,
 		},
 	}
 

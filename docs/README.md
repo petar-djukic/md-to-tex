@@ -2,13 +2,16 @@
 
 Development here is specification-driven: the design exists as documents
 before any component exists as code, and an implementation issue executes an
-SRD rather than deriving one. The layer holds three kinds of file.
+SRD rather than deriving one. The layer holds four kinds of file.
 [VISION.yaml](VISION.yaml) states what the library is for, what it is not, and
 how we will know it works. [ARCHITECTURE.yaml](ARCHITECTURE.yaml) decomposes
 the library into components and records the decisions that fix the mapping
 between markdown and LaTeX. The SRDs under [srd/](srd/) carry the requirements
 of each component, stated as a markdown input paired with the exact LaTeX
-output wherever a requirement encodes a correspondence between the two formats.
+output wherever a requirement encodes a correspondence between the two
+formats. [road-map.yaml](road-map.yaml) assigns every SRD to a release, so
+implementation has an order and each release ships something the consuming
+pipeline can adopt on its own.
 
 ## Table 1: the traceability edges
 
@@ -17,6 +20,7 @@ output wherever a requirement encodes a correspondence between the two formats.
 | goals | VISION success criteria -> ARCHITECTURE components | inspection |
 | requirements | ARCHITECTURE `srd:` pointers -> `docs/srd/*.yaml` | `mage audit`, both directions |
 | implementation | SRD requirement ids -> tests naming them | `mage audit` |
+| releases | road-map.yaml units -> `docs/srd/*.yaml`, exactly one release per SRD | `mage audit`, both directions |
 
 Both directions on requirements means every pointer resolves to a file and
 every SRD on disk is named by a component, so neither a dangling pointer nor
