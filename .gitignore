@@ -11,11 +11,15 @@
 # Test binary, built with `go test -c`
 *.test
 
-# Code coverage profiles and other test artifacts
-*.out
-coverage.*
-*.coverprofile
-profile.cov
+# Code coverage profiles and other test artifacts.
+#
+# Anchored to the repository root: unanchored, coverage.* matches at any depth
+# and claims a source file whose name happens to begin with coverage, which is
+# how internal/specs/coverage.go was silently left out of a commit (GH-41).
+/*.out
+/coverage.*
+/*.coverprofile
+/profile.cov
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
