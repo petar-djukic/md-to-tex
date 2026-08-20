@@ -60,17 +60,52 @@ func (w *walker) inline(builder *strings.Builder, node ast.Node) error {
 	return w.fail(w.offsetOf(node), node.Kind().String(), "no mapping for this construct")
 }
 
-// text escapes a text node and carries its line breaks
-// (srd-2-renderer-core R4.1, R4.4).
+// text renders a text node - escaping its prose, passing raw LaTeX through -
+// and carries its line breaks (srd-2-renderer-core R4.1, R4.4).
 func (w *walker) text(builder *strings.Builder, node *ast.Text) error {
-	builder.WriteString(latex.Escape(string(node.Segment.Value(w.source))))
+	start, stop := node.Segment.Start, node.Segment.Stop
+	if w.rawUntil > start {
+		// A control sequence in an earlier node reached into this one and was
+		// written whole (srd-7-passthrough R2.1).
+		if w.rawUntil >= stop {
+			w.writeLineBreak(builder, node)
+			return nil
+		}
+		start = w.rawUntil
+	}
+
+	content := string(w.source[start:stop])
+	if err := w.writeText(builder, content, start, w.blockEnd(node)); err != nil {
+		return err
+	}
+	w.writeLineBreak(builder, node)
+	return nil
+}
+
+// writeLineBreak carries a text node's line break (srd-2-renderer-core R4.4).
+func (w *walker) writeLineBreak(builder *strings.Builder, node *ast.Text) {
 	switch {
 	case node.HardLineBreak():
 		builder.WriteString("\\\\\n")
 	case node.SoftLineBreak():
 		builder.WriteString("\n")
 	}
-	return nil
+}
+
+// blockEnd is where the block holding node ends, which bounds how far a
+// control sequence may reach when its groups straddle text nodes.
+func (w *walker) blockEnd(node ast.Node) int {
+	for parent := node.Parent(); parent != nil; parent = parent.Parent() {
+		// Lines panics on an inline node, and a text node inside emphasis has
+		// inline parents before it reaches its block.
+		if parent.Type() != ast.TypeBlock {
+			continue
+		}
+		if lines := parent.Lines(); lines.Len() > 0 {
+			return lines.At(lines.Len() - 1).Stop
+		}
+	}
+	return len(w.source)
 }
 
 // emphasis renders emphasis and strong emphasis over their rendered content

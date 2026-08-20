@@ -95,6 +95,9 @@ type walker struct {
 
 	out    strings.Builder
 	labels []Label
+	// rawUntil is how far into the source a control sequence has already been
+	// written, for the runs goldmark splits across text nodes.
+	rawUntil int
 	// seen maps an identifier to the heading that claimed it, so a collision
 	// names both (srd-2-renderer-core R3.6).
 	seen map[string]string
@@ -288,31 +291,6 @@ func (w *walker) blockquote(node *ast.Blockquote) error {
 	}
 	w.closeEnvironment("quote")
 	return nil
-}
-
-// fencedCode renders a code block as verbatim, or passes raw LaTeX through
-// (srd-2-renderer-core R5.4, srd-7-passthrough R1.1, R1.3).
-func (w *walker) fencedCode(node *ast.FencedCodeBlock) error {
-	body := codeText(node, w.source)
-	if isRawLaTeX(string(node.Language(w.source))) {
-		w.out.WriteString(body)
-		if !strings.HasSuffix(body, "\n") {
-			w.out.WriteString("\n")
-		}
-		w.out.WriteString("\n")
-		return nil
-	}
-	return w.verbatim(body)
-}
-
-// isRawLaTeX reports whether a fenced block's info string marks its content as
-// raw LaTeX. Both markers appear in the manuscripts (srd-7-passthrough R1.3).
-//
-// Goldmark reports the info string with its braces, so ```{=latex} arrives as
-// "{=latex}" rather than "=latex".
-func isRawLaTeX(info string) bool {
-	marker := strings.TrimSuffix(strings.TrimPrefix(info, "{"), "}")
-	return marker == "=latex" || marker == "=tex"
 }
 
 // verbatim writes a code block's text unescaped and unmodified

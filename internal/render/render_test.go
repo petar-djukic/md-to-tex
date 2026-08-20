@@ -423,10 +423,10 @@ func TestHeadingTextTakesInlineConstructs(t *testing.T) {
 	}
 }
 
-// TestRawLaTeXIsTheRouteAroundTheMapping covers srd-2-renderer-core R6.5: a
-// construct the mapping does not cover is an error, and the same content
-// written as raw LaTeX converts, so an author proceeds without waiting for a
-// mapping.
+// TestRawLaTeXIsTheRouteAroundTheMapping covers srd-2-renderer-core R6.5 and
+// srd-7-passthrough R4.3: a construct the mapping does not cover is an error,
+// and the same content written as raw LaTeX converts, so an author proceeds
+// without waiting for a mapping.
 func TestRawLaTeXIsTheRouteAroundTheMapping(t *testing.T) {
 	failure := convertError(t, "Prose.\n\n---\n")
 	if !strings.Contains(failure.Construct, "thematic break") {
