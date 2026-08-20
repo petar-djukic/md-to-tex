@@ -90,6 +90,15 @@ interfaces:
       order, and the bibliography lines.
     srd: docs/srd/srd-8-container.yaml
 
+  - name: Label collision check
+    summary: |
+      Takes the label reports of several converted chapters and returns every
+      identifier that appears in more than one, naming the chapters and the
+      heading text behind each. Conversion is per-chapter and sees no other
+      chapter, so a heading slug that two chapters derive alike reaches LaTeX
+      as a duplicate label; this is where the caller finds out first.
+    srd: docs/srd/srd-2-renderer-core.yaml
+
   - name: Options
     summary: |
       The one value the caller configures: the citation key set to validate
@@ -129,6 +138,7 @@ components:
       - Map heading levels to the sectioning commands IEEEtran provides
       - Route every text node through the escaper
       - Fail with a positioned error on an unmapped construct
+      - Report the labels a fragment carries, and find collisions across chapters
     srd: docs/srd/srd-2-renderer-core.yaml
 
   - name: Escaper
