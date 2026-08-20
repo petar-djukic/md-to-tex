@@ -73,7 +73,7 @@ non_goals:
   - "Generating the bibliography file, which the caller builds from its reference corpus."
   - "Compiling the document. Latexmk stays with the caller."
   - "Merging hand edits made inside the container itself. The container holds nothing worth hand-editing; an author who edits it anyway loses that edit on the next roster change."
-  - "Detecting label collisions across chapters. The container never reads a fragment; that check belongs to the repository audit."
+  - "Detecting label collisions across chapters. The container never reads a fragment; that check is srd-2-renderer-core R7, over the label reports conversion returns."
 
 acceptance_criteria:
   - id: AC1
