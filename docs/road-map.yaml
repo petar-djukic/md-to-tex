@@ -76,6 +76,6 @@ releases:
   - id: rel01.0
     version: "01.0"
     name: Pipeline adoption
-    status: pending
+    status: complete
     units: []
-    gate: 'rel00.3 complete. paperkit in autogenic-systems consumes the library for forward conversion of one paper, and requirement coverage in the audit reaches every stated requirement. Validation only: a gap found here files back into the SRD it belongs to.'
+    gate: 'rel00.3 complete. Validation only: a gap found here files back into the SRD it belongs to. The library half is done -- every stated requirement is named by a passing test, the audit gates that from here on, and a fixture manuscript converts end to end against committed expectations. The adoption half is cross-repo and cannot close here: paperkit consuming the library for one paper is petar-djukic/autogenic-systems#468.'

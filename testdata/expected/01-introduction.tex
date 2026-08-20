@@ -1,0 +1,26 @@
+\section{Introduction}\label{sec:intro}
+
+A paper pipeline that keeps markdown as the source of truth has to translate
+it into the LaTeX its venue expects. Routing that through a general converter
+costs 100\% of the control over R\&D\_notation and the file names
+\cite{coronado-2022-ztn-survey,du-2023}.
+
+\subsection{What the mapping fixes}\label{what-the-mapping-fixes}
+
+The correspondence is written once and holds in both directions:
+
+\begin{itemize}
+\item chapter and figure file names match across formats
+\item a caption is written once, as alt text or a caption line
+\item the emitted LaTeX stays close to what an author hand-writes
+\end{itemize}
+
+Section \ref{sec:floats} shows the floats, and Figure \ref{fig:pipeline} the
+shape of the conversion.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{01-pipeline.pdf}
+\caption{The conversion path, from markdown through the walk to a LaTeX fragment.}
+\label{fig:pipeline}
+\end{figure}
