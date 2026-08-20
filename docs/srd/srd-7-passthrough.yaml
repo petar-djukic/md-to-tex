@@ -1,0 +1,97 @@
+id: srd-7-passthrough
+title: Raw-LaTeX Passthrough
+
+problem: |
+  The mapping covers what the manuscripts write, which is less than LaTeX can
+  express. An author who needs a cross-reference, a keywords block, an
+  algorithm environment, or a table with merged cells has two options: wait for
+  the library to grow a mapping for it, or write the LaTeX. The second keeps
+  the library bounded, and it is the reason the mapping can stay small enough
+  to test.
+
+  What makes it work is the boundary. Raw content must reach the output
+  untouched, which means the escaper must never see it, and it must not be
+  re-parsed as markdown on the way. The reverse boundary matters as much: a
+  backslash in ordinary prose is prose, and escaping it is the escaper's job.
+  A recognition rule that cannot tell the two apart either mangles LaTeX or
+  turns a stray backslash into a broken compile.
+
+goals:
+  - G1: Pass fenced raw-LaTeX blocks through unchanged
+  - G2: Pass inline LaTeX control sequences through unchanged
+  - G3: Keep raw content away from the escaper and away from the markdown walk
+  - G4: Leave a backslash that is not a control sequence to ordinary escaping
+
+requirements:
+  R1:
+    title: Fenced blocks
+    items:
+      - R1.1: 'A fenced code block whose info string is the raw-LaTeX marker - an equals sign followed by latex, delimited by braces - is raw content. Its lines are emitted verbatim, in order, with no escaping and no reformatting.'
+      - R1.2: The marker itself and the fence lines are not emitted. What reaches the output is exactly what sat between them.
+      - R1.3: 'An info string naming tex rather than latex is treated the same way: both markers appear in the manuscripts.'
+      - R1.4: A fenced block with any other info string, or none, is a code block and renders as verbatim under srd-2-renderer-core R5.4. The distinction is the info string alone.
+      - R1.5: Raw block content is not parsed as markdown, not walked, and not searched for citations (srd-6-citations R4.4).
+    examples:
+      - markdown: |
+          ```{=latex}
+          \begin{IEEEkeywords}
+          Autogenic systems, LLM agents.
+          \end{IEEEkeywords}
+          ```
+        latex: |
+          \begin{IEEEkeywords}
+          Autogenic systems, LLM agents.
+          \end{IEEEkeywords}
+  R2:
+    title: Inline control sequences
+    items:
+      - R2.1: 'An inline run beginning with a backslash followed by one or more ASCII letters is a control sequence and is raw. The run covers the command name and the balanced brace groups and bracket groups that follow it directly, with no intervening space.'
+      - R2.2: Balanced means nesting counts. A group closes at the brace that balances its opening, so a reference whose argument holds braces survives whole.
+      - R2.3: An unbalanced group is an error naming the file, the line, and the command. Emitting it would produce a LaTeX error pointing at a different place entirely.
+      - R2.4: The control sequence and its groups are emitted exactly as written, and their content never reaches the escaper (srd-3-escaping R3.4).
+    examples:
+      - markdown: |
+          Section \ref{literature-survey} surveys the standards, and Figure \ref{fig:kinds-to-levels} grades them.
+        latex: |
+          Section \ref{literature-survey} surveys the standards, and Figure \ref{fig:kinds-to-levels} grades them.
+  R3:
+    title: What is not raw
+    items:
+      - R3.1: A backslash followed by anything other than an ASCII letter is not a control sequence. It escapes under srd-3-escaping R1.1, which is what a stray backslash in prose needs.
+      - R3.2: A backslash inside inline code or a code block is code and is emitted as the code renderer emits it, neither raw nor escaped.
+      - R3.3: A control sequence inside a raw block is already raw; R2 does not apply a second time, because raw content is not walked.
+      - R3.4: 'A markdown hard line break - two trailing spaces - is not a control sequence. It renders as srd-2-renderer-core R4.4 states.'
+      - R3.5: Recognition is textual and does not consult a list of known commands. The library does not know which control sequences LaTeX defines, and an author who writes an undefined one gets a LaTeX error rather than a conversion error.
+  R4:
+    title: The boundary
+    items:
+      - R4.1: Content declared raw is written to the output buffer directly. No other component may write to that buffer without passing through the escaper (srd-2-renderer-core R6.2).
+      - R4.2: Raw content is opaque to every check the library performs. Citation validation, figure attribute parsing, and table detection do not run inside it.
+      - R4.3: 'Passthrough is the mapping''s pressure valve: an unmapped construct is an error under srd-2-renderer-core R6.4, and raw LaTeX is how an author proceeds without waiting for a mapping.'
+      - R4.4: Raw LaTeX carrying a float, a caption, or a table is not held to srd-4-figures, srd-5-tables, or srd-9-backport-compatibility. The author who writes it owns what the backport makes of it.
+
+non_goals:
+  - "Validating LaTeX. We check brace balance to bound the run, and nothing further."
+  - "Rewriting raw content, including reindenting, rewrapping, or normalizing whitespace."
+  - "Supporting raw content in formats other than LaTeX. An HTML raw block is an error under srd-2-renderer-core R6.3."
+  - "Recognizing LaTeX environments written without fences. A begin command and its end are two control sequences with prose between them, and the prose converts normally."
+
+acceptance_criteria:
+  - id: AC1
+    criterion: A fenced raw-LaTeX block emits its content byte for byte, without the fence or the info string, and its braces and backslashes are unescaped.
+    traces: [R1.1, R1.2]
+  - id: AC2
+    criterion: An inline reference command with a braced argument passes through unchanged, and the surrounding prose escapes normally in the same paragraph.
+    traces: [R2.1, R2.4, R3.1]
+  - id: AC3
+    criterion: A control sequence whose argument contains nested braces survives whole; one with an unbalanced brace fails with an error naming the command and line.
+    traces: [R2.2, R2.3]
+  - id: AC4
+    criterion: A citation-shaped run inside a raw block does not become a cite command, and a figure-shaped image inside a raw block does not become a float.
+    traces: [R1.5, R4.2]
+  - id: AC5
+    criterion: A backslash before a space, a digit, or a punctuation character escapes rather than passing through raw.
+    traces: [R3.1]
+  - id: AC6
+    criterion: A fenced block whose info string names a programming language renders as verbatim, not as raw LaTeX.
+    traces: [R1.4]

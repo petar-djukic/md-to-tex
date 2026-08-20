@@ -1,0 +1,86 @@
+id: srd-6-citations
+title: Citation Extension
+
+problem: |
+  The manuscripts cite in pandoc's inline syntax, a bracketed run of keys each
+  introduced by an at sign. Goldmark has no idea what that is: it sees a link
+  that failed to parse and hands the renderer a bracketed text run, which the
+  escaper then protects character by character. The citation reaches the LaTeX
+  as prose.
+
+  Recognizing the syntax is only half of it. A key that does not exist in the
+  reference corpus produces a compile that succeeds and a bibliography entry
+  that silently reads as a question mark, discovered when someone reads the
+  PDF. The conversion knows the file and the line; the corpus belongs to the
+  caller. Validation therefore happens here, against a set the caller supplies.
+
+goals:
+  - G1: Parse the inline citation syntax the manuscripts use
+  - G2: Render one cite command per bracketed run, keys comma-joined
+  - G3: Fail on a key the caller's corpus does not hold, naming the key
+  - G4: Leave every other bracketed run alone
+
+requirements:
+  R1:
+    title: Syntax
+    items:
+      - R1.1: 'A citation is an opening bracket, one or more keys, and a closing bracket. Each key is an at sign followed by the key text. Keys are separated by a semicolon and optional whitespace.'
+      - R1.2: 'Key text runs over letters, digits, hyphens, underscores, colons, periods, and slashes. A period or colon at the end of the run belongs to the sentence, not the key, and is not consumed.'
+      - R1.3: The parser is registered as a goldmark inline parser triggered on the opening bracket. It produces a citation node holding the ordered key list, and consumes the run through its closing bracket.
+      - R1.4: Duplicate keys within one run are preserved in order. Deduplication is the bibliography style's business.
+  R2:
+    title: Rendering
+    items:
+      - R2.1: A citation node renders as a cite command whose argument is the keys joined by commas with no spaces.
+      - R2.2: The cite command is emitted raw. Keys never pass through the escaper, and a key requiring escaping is a key the corpus should not hold.
+      - R2.3: A citation renders identically wherever it appears - paragraph, heading, list item, table cell, or figure caption - because it is an inline node like any other (srd-2-renderer-core R6.1).
+    examples:
+      - markdown: |
+          Zero-touch automation is surveyed in [@coronado-2022-ztn-survey].
+        latex: |
+          Zero-touch automation is surveyed in \cite{coronado-2022-ztn-survey}.
+      - markdown: |
+          Both lines converge [@declarative-agents-2026; @zhang-2025b].
+        latex: |
+          Both lines converge \cite{declarative-agents-2026,zhang-2025b}.
+  R3:
+    title: Validation
+    items:
+      - R3.1: When Options carries a citation key set, every key in every citation must be a member. A key that is not is an error naming the key, the file, and the line, and the conversion returns no fragment (srd-2-renderer-core R1.3).
+      - R3.2: When Options carries no key set, validation is skipped and every syntactically valid citation renders. An empty set means no keys are valid; an absent set means validation is off. The two are distinguishable.
+      - R3.3: The library never reads the reference corpus. The caller owns it and passes the keys.
+      - R3.4: Validation reports the first offending key with its position rather than collecting every failure, so the message names one line an author can go to.
+  R4:
+    title: What is not a citation
+    items:
+      - R4.1: A bracketed run whose first character is not an at sign is not a citation. Markdown link and image syntax parse as they always did.
+      - R4.2: A bracketed run that opens with an at sign but does not close, or that holds a key with no text after the at sign, is not a citation. It renders as ordinary text through the escaper, and the at sign is not markup in LaTeX.
+      - R4.3: Citation syntax inside inline code or a code block is not parsed. Code renders as written (srd-2-renderer-core R4.3, R5.4).
+      - R4.4: A citation inside raw LaTeX is not parsed, because raw content is never walked (srd-7-passthrough). An author writing a cite command by hand gets it through unchanged.
+      - R4.5: An escaped opening bracket does not begin a citation.
+
+non_goals:
+  - "Prefixes, suffixes, and locators - the page-number and see-also forms pandoc supports. The manuscripts use neither, and a citation carrying one is prose the author writes around the cite command."
+  - "Author-year and other in-text citation styles. The bibliography style decides how a cite renders; we emit the command."
+  - "Reading, parsing, or validating the reference corpus itself."
+  - "Generating a bibliography or a bibliography file, which the caller does (srd-8-container)."
+
+acceptance_criteria:
+  - id: AC1
+    criterion: A single-key citation and a three-key grouped citation render as the R2 examples, keys comma-joined with no spaces.
+    traces: [R1.1, R2.1]
+  - id: AC2
+    criterion: A key absent from the supplied set fails with an error naming the key, the file, and the line, and no fragment is returned.
+    traces: [R3.1, R3.4]
+  - id: AC3
+    criterion: With no key set in Options, the same document converts without error; with an empty set, it fails.
+    traces: [R3.2]
+  - id: AC4
+    criterion: A markdown link, an unterminated bracketed run, an at sign in inline code, and a cite command inside a raw-LaTeX block all render unchanged, none of them producing a citation node.
+    traces: [R4.1, R4.2, R4.3, R4.4]
+  - id: AC5
+    criterion: A citation in a table cell and a citation in a figure caption both render the cite command.
+    traces: [R2.3]
+  - id: AC6
+    criterion: A citation whose key ends at a sentence period renders the key without the period, and the period survives in the prose.
+    traces: [R1.2]

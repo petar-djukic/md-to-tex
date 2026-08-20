@@ -1,0 +1,104 @@
+id: srd-4-figures
+title: Figure Handling
+
+problem: |
+  A figure in an IEEEtran paper is a float carrying an include, a caption, and
+  a label. In markdown it should be an image block, because that is what
+  Obsidian renders and what an author can see while writing. The manuscripts
+  today do not write it that way: they carry raw LaTeX float fences in the
+  prose, which compile correctly and render as code blocks in the editor, so
+  the source of truth is degraded to make the converter behave.
+
+  Two properties have to survive the mapping. The caption is written once, as
+  the image's alt text, and reaches the LaTeX as the float's caption rather
+  than as a second copy someone edits separately. The file name is the same on
+  both sides, so a figure found in one format is findable in the other without
+  a lookup table.
+
+goals:
+  - G1: Render a markdown image block as a figure float with caption and label
+  - G2: Keep the figure file name identical across the two formats
+  - G3: Select the two-column float from the source, not from a guess
+  - G4: Emit the float shape the manuscripts already hand-write
+
+requirements:
+  R1:
+    title: Input syntax
+    items:
+      - R1.1: 'A figure is a paragraph holding exactly one image and nothing else. Its parts are the alt text, the target, and an attribute block: an image with other content beside it in the same paragraph is an inline image and is not a float.'
+      - R1.2: 'The attribute block follows the image directly, delimited by braces, and carries an identifier introduced by a hash, optional classes introduced by a period, and optional key-value attributes. Goldmark parses attributes on headings only, so this component supplies image attribute parsing.'
+      - R1.3: An image block whose attribute block states no identifier is an error naming the file and line. A float with no label cannot be referenced, and a figure nobody references belongs inline.
+      - R1.4: An image with no alt text is an error. The alt text is the caption, and a float without one is unidentifiable once LaTeX places it away from its text.
+  R2:
+    title: Float emission
+    items:
+      - R2.1: 'The float is emitted as the figure environment with the placement specifier for the top of a page, then a centering command, then the include, then the caption, then the label, then the environment end - each on its own line, in that order.'
+      - R2.2: The caption argument is the alt text rendered as inline content through the renderer core, so emphasis and escaping behave as they do in a paragraph (srd-2-renderer-core, srd-3-escaping).
+      - R2.3: The label argument is the identifier from the attribute block, emitted verbatim. Identifiers are not normalized, slugged, or prefixed.
+      - R2.4: The caption and label are emitted as plain commands with nothing between them and the float, and the include is not wrapped in a sizing environment. Adjustbox and the counter-stepping caption idiom the pandoc filter uses are forbidden (srd-9-backport-compatibility).
+    examples:
+      - markdown: |
+          ![Autonomy levels graded by who writes the specification.](fig/01-kinds-to-levels.pdf){#fig:kinds-to-levels}
+        latex: |
+          \begin{figure}[!t]
+          \centering
+          \includegraphics[width=\columnwidth]{01-kinds-to-levels.pdf}
+          \caption{Autonomy levels graded by who writes the specification.}
+          \label{fig:kinds-to-levels}
+          \end{figure}
+  R3:
+    title: Width and the two-column float
+    items:
+      - R3.1: A figure with no wide class renders in the figure environment at the width of one column. A figure carrying the wide class renders in the starred figure environment at the width of the text block.
+      - R3.2: A width attribute states a fraction of the enclosing measure. The include width becomes that fraction of the column width for a single-column float and that fraction of the text width for a two-column float.
+      - R3.3: A width attribute outside the range greater than zero through one is an error naming the value.
+      - R3.4: 'The default include width is the full enclosing measure. This differs from the pandoc filter, which bounds the include with an adjustbox maximum: the plain include is what the manuscripts hand-write and what the backport reads (srd-9-backport-compatibility), and a figure that must not be enlarged states a width attribute.'
+    examples:
+      - markdown: |
+          ![The closed loop runs the algorithm its specification records.](fig/00-concept-structure.pdf){#fig:concept-structure .wide}
+        latex: |
+          \begin{figure*}[!t]
+          \centering
+          \includegraphics[width=\textwidth]{00-concept-structure.pdf}
+          \caption{The closed loop runs the algorithm its specification records.}
+          \label{fig:concept-structure}
+          \end{figure*}
+      - markdown: |
+          ![A narrow diagram.](fig/02-narrow.pdf){#fig:narrow width=0.6}
+        latex: |
+          \begin{figure}[!t]
+          \centering
+          \includegraphics[width=0.6\columnwidth]{02-narrow.pdf}
+          \caption{A narrow diagram.}
+          \label{fig:narrow}
+          \end{figure}
+  R4:
+    title: File-name correspondence
+    items:
+      - R4.1: 'The include argument is the target''s base name with its extension intact. Only the directory prefix is dropped: the container supplies it through a graphics path (srd-8-container).'
+      - R4.2: The extension is never rewritten. A markdown reference to a PDF includes that PDF, which is what Obsidian embeds and what the compile needs.
+      - R4.3: The renderer does not check that the file exists. The caller compiles the figures and knows where they are; a conversion that reads the file system violates srd-2-renderer-core R1.1.
+      - R4.4: A target carrying no directory prefix is included as written. A target that is an absolute path or a remote URL is an error naming the target.
+
+non_goals:
+  - "Compiling figure sources. The caller builds PDFs from its diagram sources."
+  - "Reading the legacy convention where a one-column markdown table carries a figure's caption. That belongs to the pandoc path this library replaces."
+  - "Deriving an identifier from the file name. An unlabeled float is an error under R1.3."
+  - "Placing floats. The placement specifier is fixed and LaTeX decides the rest."
+
+acceptance_criteria:
+  - id: AC1
+    criterion: An image block with alt text and an identifier renders byte-for-byte as the R2 example, including the placement specifier and the centering command.
+    traces: [R1.1, R2.1, R2.2, R2.3]
+  - id: AC2
+    criterion: The wide class produces the starred environment at text width, and a width attribute scales the include against the correct measure in each case.
+    traces: [R3.1, R3.2]
+  - id: AC3
+    criterion: A figure referenced in markdown as a PDF under a directory is included as the same file name with no directory and no extension change.
+    traces: [R4.1, R4.2]
+  - id: AC4
+    criterion: An image with no alt text, an image with no identifier, a width of zero, and a remote target each fail with an error naming the file and line.
+    traces: [R1.3, R1.4, R3.3, R4.4]
+  - id: AC5
+    criterion: No emitted figure contains an adjustbox environment or any wrapper between the float and its caption.
+    traces: [R2.4]

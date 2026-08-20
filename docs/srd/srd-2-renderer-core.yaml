@@ -46,7 +46,9 @@ requirements:
       - R3.2: A heading of level five or deeper is an error under R1.3. IEEEtran provides no command below paragraph.
       - R3.3: Heading text passes through the escaper and may carry inline constructs, which render as they do in a paragraph.
       - R3.4: A heading carrying an identifier attribute must emit a label command with that identifier immediately after the sectioning command, on the same line, so a raw reference elsewhere resolves (srd-7-passthrough).
-      - R3.5: A chapter's first heading is emitted like any other. The renderer does not drop, renumber, or promote headings.
+      - R3.5: A heading with no identifier attribute must emit a label carrying the identifier derived from its text - lowercased, every run of characters outside the ASCII letters and digits collapsed to a single hyphen, leading and trailing hyphens removed. The manuscripts reference sections by that slug, which pandoc derived for them, so a renderer that labels only explicit identifiers leaves those references dangling.
+      - R3.6: A derived identifier that collides with another in the same chapter is an error naming both headings. Pandoc disambiguates collisions by appending a counter, which makes the second reference depend on heading order; an error makes the author name one of them.
+      - R3.7: A chapter's first heading is emitted like any other. The renderer does not drop, renumber, or promote headings.
     examples:
       - markdown: |
           # The Conversion Pipeline {#sec:pipeline}
@@ -55,7 +57,11 @@ requirements:
         latex: |
           \section{The Conversion Pipeline}\label{sec:pipeline}
 
-          \subsection{Escaping}
+          \subsection{Escaping}\label{escaping}
+        note: |
+          The first heading states an identifier and keeps it; the second
+          states none and takes the slug derived under R3.5, which is what the
+          manuscripts' existing references were written against.
   R4:
     title: Paragraphs and inline text
     items:
@@ -115,6 +121,9 @@ acceptance_criteria:
   - id: AC4
     criterion: An HTML comment under a heading does not appear in the output, and the heading's identifier appears as a label on the sectioning line.
     traces: [R3.4, R6.3]
+  - id: AC7
+    criterion: A heading with no identifier attribute emits the label its text slugs to, so a reference written against the pandoc-derived slug resolves; two headings slugging to the same identifier fail with an error naming both.
+    traces: [R3.5, R3.6]
   - id: AC5
     criterion: A paragraph containing the ten LaTeX special characters comes out escaped, demonstrating that no renderer bypasses the escaper.
     traces: [R4.1, R6.2]
