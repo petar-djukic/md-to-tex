@@ -1,0 +1,191 @@
+# VISION.yaml -- what md-to-tex is for (GH-2).
+# Goals and boundaries only. ARCHITECTURE.yaml carries the decomposition and
+# docs/srd/ carries the requirements each component answers to.
+
+id: vision-md-to-tex
+title: md-to-tex Vision
+
+executive_summary: |
+  md-to-tex is a Go library that converts Obsidian-native markdown manuscripts
+  into IEEEtran LaTeX. We own the mapping between markdown constructs and the
+  LaTeX a journal class needs: chapter and figure file names match one-to-one
+  across formats, a caption is written once and renders to plain caption and
+  label commands, and front matter renders from YAML metadata by template and
+  escaping. We are not a general markdown converter, a LaTeX compiler, or a
+  replacement for pandoc in the tex-to-markdown direction.
+
+problem: |
+  A paper pipeline that keeps markdown as the source of truth has to translate
+  it into the LaTeX its venue class expects, and routing that translation
+  through pandoc hands the mapping to a program the pipeline does not control.
+  Pandoc and its filters decide what a caption becomes, how a float is wrapped,
+  what a table turns into, and what file the output lands in. Constraining any
+  of those means fighting a general-purpose converter through filters, and each
+  filter is a second place where the mapping lives.
+
+  Two properties suffer first. File-name correspondence is one: a chapter or a
+  figure should be findable in both formats under the same name, and pandoc's
+  output naming is not ours to set. Round-trip legibility is the other: a
+  manuscript that goes out to LaTeX and comes back has to bring caption and
+  prose edits with it, which only works when the emitted LaTeX stays close to
+  the plain forms a reader edits and a reader-side parser recovers. Pandoc
+  emits float and table idioms — wrapper environments, generated caption
+  counters, longtable layouts — that survive compilation but do not diff back
+  as prose.
+
+  The markdown itself is the third pressure. It must stay native enough that
+  Obsidian renders it, because authors work in Obsidian. Raw LaTeX float fences
+  scattered through prose to force pandoc's hand render as code blocks in the
+  editor, so the workaround for the converter degrades the source of truth.
+
+what_this_does: |
+  We move the forward mapping into Go code the pipeline owns.
+
+  Chapters convert through a goldmark abstract syntax tree walk. Text nodes
+  escape the ten LaTeX special characters and pass Unicode through untouched.
+  An inline parser extension turns citation syntax into cite commands. Raw
+  LaTeX passes through unescaped, inline and as fenced blocks, so an author who
+  needs a construct the mapping does not cover writes it directly.
+
+  Figures and tables carry their captions in native markdown. An image block
+  with an alt text and an identifier attribute becomes a figure float whose
+  caption is the alt text and whose label is the identifier, referencing the
+  same file name the markdown referenced. A pipe table followed by a caption
+  line becomes a tabularx float on the same terms. A class attribute selects
+  the two-column-spanning variant. Nothing in the markdown is a LaTeX escape
+  hatch, so Obsidian renders all of it.
+
+  Front matter takes a separate path because its parts have destinations rather
+  than a flow: title, subtitle, author, and abstract render from the YAML
+  metadata through Go templates and escaping into the title and abstract
+  commands IEEEtran expects. The container document is generated too — document
+  class, preamble include, the input list, bibliography lines — and regenerates
+  only when the chapter roster changes, so hand edits to the preamble survive.
+
+  Every emitted construct is held to one further constraint: it must survive a
+  pandoc LaTeX reader well enough that an edit made on the tex side diffs back
+  into markdown as prose. That is what keeps the backport direction usable
+  while it stays on pandoc.
+
+why_we_build_this: |
+  The pipeline that consumes this library builds papers from markdown and sends
+  them back to markdown after the LaTeX side is edited. Both directions have to
+  agree on the same mapping, and only one of them can be improvised. We fix the
+  forward direction in code we can test, so the correspondence between the two
+  formats is a property the library asserts rather than a property that emerges
+  from a chain of filters.
+
+related_projects:
+  - name: paperkit
+    relation: |
+      The consumer, in petar-djukic/autogenic-systems. It owns the reference
+      corpus, the figure compilation, the backport reader, and the latexmk
+      build; it calls this library for the forward conversion. Its current
+      frontmatter renderer is the behavioral reference for our front-matter
+      component.
+  - name: goldmark
+    relation: |
+      The markdown parser we render from. We supply node renderers and one
+      inline parser extension; we do not fork it.
+
+success_criteria:
+  - id: SC1
+    criterion: |
+      A chapter file NN-name.md converts to tex/NN-name.tex, and a figure
+      referenced as fig/name.pdf in markdown is included as name.pdf in LaTeX.
+      File-name correspondence holds for every chapter and figure in the
+      consuming manuscripts.
+  - id: SC2
+    criterion: |
+      Every caption in the manuscripts is written once in markdown and appears
+      in the LaTeX as a plain caption command paired with a label command, with
+      no wrapper environment between the float and the caption.
+  - id: SC3
+    criterion: |
+      The manuscripts paperkit builds today compile under latexmk from LaTeX
+      this library emits, with no pandoc invocation in the forward path.
+  - id: SC4
+    criterion: |
+      A caption or prose edit made in the emitted LaTeX comes back through
+      paperkit's backport as a prose diff in the markdown, not as a structural
+      rewrite.
+  - id: SC5
+    criterion: |
+      Every requirement in docs/srd/ is exercised by at least one test, and the
+      audit target reports which are not.
+
+implementation_phases:
+  - id: P1
+    phase: Specification layer
+    detail: |
+      VISION and ARCHITECTURE (GH-2), then one SRD per component (GH-3). No
+      implementation code before the SRD that governs it exists.
+  - id: P2
+    phase: Audit target
+    detail: |
+      The mage audit target that parses the docs layer strictly and checks the
+      architecture-to-SRD edges in both directions (GH-4), so the specification
+      layer is machine-checked from the moment it lands.
+  - id: P3
+    phase: Text path
+    detail: |
+      Escaping and the front-matter renderer, the two components with a
+      behavioral reference in paperkit to test against.
+  - id: P4
+    phase: Chapter path
+    detail: |
+      The goldmark renderer core, raw-LaTeX passthrough, and the citation
+      extension: a chapter of prose converts end to end.
+  - id: P5
+    phase: Floats
+    detail: |
+      Figures and tables, including the column-width heuristics and the
+      single-column against two-column float decision.
+  - id: P6
+    phase: Container and adoption
+    detail: |
+      Container generation, then paperkit switches its forward path to this
+      library and we compare output against the pandoc path on the existing
+      manuscripts.
+
+risks:
+  - id: R1
+    risk: |
+      Obsidian, goldmark, and pandoc do not agree on every markdown construct.
+      Attribute syntax on images, pipe-table alignment rows, and caption lines
+      are the places where the three diverge.
+    mitigation: |
+      The SRDs state each correspondence as a markdown input paired with the
+      exact LaTeX output, so a divergence is a failing test rather than a
+      surprise in a built PDF.
+  - id: R2
+    risk: |
+      The backport direction stays on pandoc, so a change to pandoc's LaTeX
+      reader can break round-trip legibility without any change here.
+    mitigation: |
+      Backport compatibility is a component with its own SRD and its own tests,
+      which pin the forms we emit rather than trusting the reader to cope.
+  - id: R3
+    risk: |
+      Table column-width heuristics are judgment encoded as arithmetic, and a
+      table that spills its column is a compilation the author has to fix by
+      hand.
+    mitigation: |
+      The heuristic is specified with its inputs and thresholds and is tested
+      on the tables in the existing manuscripts, which are the corpus it has to
+      satisfy.
+  - id: R4
+    risk: |
+      Chasing pandoc parity turns a bounded mapping into a general converter.
+    mitigation: |
+      Raw-LaTeX passthrough is the pressure valve: a construct outside the
+      mapping is written directly rather than added to the mapping, and what
+      the library covers stays what the manuscripts use.
+
+not:
+  - "A general-purpose markdown converter. We cover the constructs the manuscripts use and pass the rest through as raw LaTeX."
+  - "The tex-to-markdown backport reader. That direction stays on pandoc's LaTeX reader in paperkit; we constrain what we emit so it keeps working."
+  - "PDF compilation. Latexmk stays in paperkit, as does figure compilation and the reference corpus."
+  - "A LaTeX class or style file. We emit for IEEEtran as the venue class supplies it."
+  - "A command-line tool. The deliverable is a library; paperkit owns the executable."
+  - "A pandoc replacement anywhere but the forward chapter and front-matter path."

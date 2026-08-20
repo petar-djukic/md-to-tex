@@ -1,0 +1,399 @@
+# ARCHITECTURE.yaml -- how md-to-tex is put together (GH-2).
+# Components, the public surface, and the decisions that fix the mapping. Each
+# component names the SRD under docs/srd/ that carries its requirements; the
+# audit target checks those edges in both directions.
+
+id: architecture-md-to-tex
+title: md-to-tex Architecture
+
+overview:
+  summary: |
+    md-to-tex is a Go library with three entry points and no executable. One
+    converts a chapter of markdown into a LaTeX fragment, one renders a title
+    page into the front-matter fragment, and one generates the container
+    document that inputs the fragments. The consuming pipeline owns the file
+    system, the reference corpus, the figure sources, and the compilation; we
+    own the mapping from markdown constructs to LaTeX.
+
+    The chapter path is a goldmark abstract syntax tree walk. We register node
+    renderers for the constructs the manuscripts use and one inline parser
+    extension for citations. Everything a renderer emits passes through the
+    escaper or is declared raw. The front-matter path does not use goldmark for
+    its metadata: title, subtitle, and author are fields with destinations, so
+    they render through Go templates and escaping, and only the abstract and
+    the remaining body convert through the chapter path.
+
+    Two components exist to constrain the others rather than to emit anything.
+    The escaper decides what a text node may contain. Backport compatibility
+    decides what forms the float and caption renderers may choose among, so an
+    edit made on the LaTeX side comes back as a prose diff.
+
+  lifecycle: |
+    A conversion is a single call over a byte slice, with no state carried
+    between calls and no file system access. The caller supplies the source and
+    the options — the citation key set, the graphics path, the float width
+    thresholds — and receives the LaTeX fragment or an error.
+
+    Errors are returned, never printed, and never partial: a conversion that
+    cannot render a node returns an error naming the construct and its position
+    rather than emitting a fragment that will fail in LaTeX. An unknown
+    citation key is an error at conversion time, which is where the caller can
+    still name the file.
+
+    Container generation is the one call that reads the world, and it reads
+    only the chapter roster the caller passes. It returns the container
+    document; deciding whether to write it over an existing one is the caller's,
+    and the container regenerates only when the roster changes so hand edits to
+    the preamble survive.
+
+  coordination_pattern: |
+    The renderer core walks the tree and dispatches by node kind. Each node
+    renderer writes into one output buffer and returns whether to descend into
+    children. Text content reaches the buffer only through the escaper or
+    through a passthrough renderer that declares it raw; no renderer writes a
+    text node directly.
+
+    The float renderers share one decision procedure. A figure or a table
+    computes its width demand, compares it against the thresholds in the
+    options, and selects either the single-column float environment or the
+    two-column variant. A class attribute on the source overrides the
+    computation. Both then emit the same caption and label pair, in the plain
+    form backport compatibility fixes, so the two float families stay
+    interchangeable from the reader's side.
+
+    The citation extension runs at parse time rather than render time: it
+    installs an inline parser that produces a citation node, and the renderer
+    for that node emits the cite command. Key validation happens in the
+    renderer, where the caller-supplied key set is in scope.
+
+interfaces:
+  - name: Chapter conversion
+    summary: |
+      Converts one chapter of markdown into a LaTeX fragment. The fragment
+      carries sections, prose, floats, and citations, and no preamble: the
+      container inputs it. The caller names the file only to place the error
+      message; we never open it.
+    srd: docs/srd/srd-2-renderer-core.yaml
+
+  - name: Front-matter rendering
+    summary: |
+      Renders a title page — YAML metadata plus the body below it — into the
+      front-matter fragment carrying the title, author, and abstract commands
+      IEEEtran expects, followed by whatever the body holds, a keywords block
+      typically, converted through the chapter path.
+    srd: docs/srd/srd-1-front-matter.yaml
+
+  - name: Container generation
+    summary: |
+      Generates the container document from the chapter roster: document class
+      and options, preamble include, one input line per chapter in roster
+      order, and the bibliography lines.
+    srd: docs/srd/srd-8-container.yaml
+
+  - name: Options
+    summary: |
+      The one value the caller configures: the citation key set to validate
+      against, the graphics path the figure renderer assumes, the float width
+      thresholds, and the document class options the container carries. Options
+      are data, so a caller can hold them in its own configuration file and we
+      never read one.
+    srd: docs/srd/srd-2-renderer-core.yaml
+
+components:
+  - name: Front-matter renderer
+    responsibility: |
+      Parses the title page's YAML frontmatter — title, subtitle, date, author
+      as either a scalar or a list, abstract as either a field or a marked run
+      in the body — and renders the title, author, and abstract blocks through
+      Go templates and the escaper. The author's mailto link becomes a plain
+      address on its own line. The subtitle joins the title, because IEEEtran
+      has no subtitle command. No pandoc anywhere in this path.
+    capabilities:
+      - Decode title-page metadata, accepting the author as a scalar or a list
+      - Take the abstract from the frontmatter field or from the marked body run
+      - Render the title, author, and abstract blocks by template and escaping
+      - Convert the remaining body through the chapter path
+    srd: docs/srd/srd-1-front-matter.yaml
+
+  - name: Renderer core
+    responsibility: |
+      The goldmark node renderer set and the walk that drives it: headings to
+      sectioning commands by level, paragraphs, emphasis and strong emphasis,
+      lists, code, block quotes, and links. Holds the output buffer, the
+      options, and the dispatch table, and delegates every text node to the
+      escaper and every float to the figure or table component. Constructs
+      outside the mapping are an error naming the node kind, not a silent
+      omission.
+    capabilities:
+      - Walk the goldmark tree and dispatch by node kind
+      - Map heading levels to the sectioning commands IEEEtran provides
+      - Route every text node through the escaper
+      - Fail with a positioned error on an unmapped construct
+    srd: docs/srd/srd-2-renderer-core.yaml
+
+  - name: Escaper
+    responsibility: |
+      Escapes the ten characters that are markup in LaTeX and leaves everything
+      else alone. Unicode punctuation, accented names, and Greek pass through
+      as written, on the assumption the venue build runs a Unicode-aware engine.
+      The escaper is a pure function over a string with no knowledge of where
+      its output lands, so the front-matter path and the chapter path share it
+      exactly.
+    capabilities:
+      - Escape the ten LaTeX special characters
+      - Pass Unicode through untouched
+      - Serve both the template path and the node-renderer path unchanged
+    srd: docs/srd/srd-3-escaping.yaml
+
+  - name: Figure handling
+    responsibility: |
+      Turns an image block carrying an alt text and an identifier attribute
+      into a figure float: the include command referencing the same file name
+      the markdown referenced, the alt text as the caption, and the identifier
+      as the label. A class attribute selects the two-column float; a width
+      attribute sets the include width. The directory prefix in the markdown
+      path is dropped, because the container supplies it as a graphics path.
+    capabilities:
+      - Render an image block as a figure float with caption and label
+      - Preserve the figure file name across formats
+      - Select the two-column float from a class attribute
+      - Apply an optional width fraction
+    srd: docs/srd/srd-4-figures.yaml
+
+  - name: Table handling
+    responsibility: |
+      Turns a pipe table followed by its caption line into a tabularx float
+      with a caption and a label. Column widths come from a weighting over the
+      cell contents, and the column count and total width decide between the
+      single-column float and the two-column variant. Never emits longtable: a
+      two-column class has nowhere to put one.
+    capabilities:
+      - Render a pipe table as a tabularx float with caption and label
+      - Weight column widths from cell contents
+      - Decide between the single-column and two-column float
+      - Reject constructs that would require longtable
+    srd: docs/srd/srd-5-tables.yaml
+
+  - name: Citation extension
+    responsibility: |
+      A goldmark inline parser that recognizes the citation syntax the
+      manuscripts use, single and grouped, and produces a citation node the
+      renderer turns into a cite command with the keys comma-joined. Keys are
+      validated against the set the caller supplies, because the reference
+      corpus belongs to the pipeline and not to this library.
+    capabilities:
+      - Parse single and grouped citation syntax as an inline node
+      - Render a cite command carrying the comma-joined keys
+      - Validate keys against a caller-supplied set and fail on an unknown key
+    srd: docs/srd/srd-6-citations.yaml
+
+  - name: Raw-LaTeX passthrough
+    responsibility: |
+      Passes LaTeX the author wrote through unescaped, inline for reference and
+      formatting commands and as fenced blocks for anything the mapping does
+      not cover. This is the pressure valve that keeps the mapping bounded: a
+      construct the library does not know is written directly rather than added
+      to the library.
+    capabilities:
+      - Pass inline raw LaTeX through unescaped
+      - Pass fenced raw-LaTeX blocks through unescaped
+      - Keep raw content out of the escaper
+    srd: docs/srd/srd-7-passthrough.yaml
+
+  - name: Container generator
+    responsibility: |
+      Generates the container document: document class with its options, the
+      preamble include, one input line per chapter in roster order, and the
+      bibliography lines. Holds no content of its own — every section of the
+      paper arrives through an input line — so regenerating it on a roster
+      change cannot disturb a chapter.
+    capabilities:
+      - Emit the document class, preamble include, and bibliography lines
+      - Emit the input list in roster order
+      - Regenerate on a roster change without touching hand-edited preamble
+    srd: docs/srd/srd-8-container.yaml
+
+  - name: Backport compatibility
+    responsibility: |
+      The constraint the emitting components answer to rather than a stage in
+      the pipeline. Every construct we emit has to survive a pandoc LaTeX
+      reader well enough that a caption or prose edit made on the LaTeX side
+      diffs back into markdown as prose. It forbids wrapper environments around
+      floats, caption idioms that depend on counter manipulation, and any form
+      whose reader output is a raw block rather than prose.
+    capabilities:
+      - Fix the plain caption and label forms the float renderers emit
+      - Forbid wrapper environments and counter-manipulating caption idioms
+      - Hold the emitted forms under test against the reader the pipeline uses
+    srd: docs/srd/srd-9-backport-compatibility.yaml
+
+design_decisions:
+  - id: D1
+    title: A goldmark renderer rather than pandoc filters
+    decision: |
+      The forward direction converts through a goldmark tree walk in Go, not
+      through pandoc with filters.
+    benefits:
+      - The mapping lives in one language, in code the pipeline tests
+      - Errors name a construct and a position instead of producing surprising LaTeX
+      - No process boundary and no filter runtime in the build
+    alternatives_rejected:
+      - "Pandoc with Lua filters: the mapping stays split between pandoc's defaults and the filters, and the defaults are not ours to set."
+      - "A hand-written markdown parser: parsing is the solved part, and CommonMark conformance is not worth re-deriving."
+
+  - id: D2
+    title: Captions are written once in markdown
+    decision: |
+      A figure's caption is its image alt text and a table's caption is its
+      caption line. Neither is written a second time in LaTeX.
+    benefits:
+      - Obsidian renders the caption, so the author sees it while writing
+      - The caption has one source, so the two formats cannot disagree
+      - A caption edited on the LaTeX side backports as a prose change
+    alternatives_rejected:
+      - "Raw LaTeX float fences in the markdown: they carry the caption but render as code blocks in Obsidian, which degrades the source of truth."
+      - "A caption field in a metadata block: it separates the caption from the figure and neither format shows them together."
+
+  - id: D3
+    title: File names correspond one-to-one
+    decision: |
+      A chapter file maps to a LaTeX fragment of the same name, and a figure
+      keeps its file name across both formats.
+    benefits:
+      - A reader who has one format can find the other file without a mapping table
+      - The backport has an unambiguous destination for every fragment
+      - The container's input list is derivable from the chapter roster
+    alternatives_rejected:
+      - "A generated manifest mapping names across formats: a second artifact that can go stale, replacing a property that costs nothing to keep."
+
+  - id: D4
+    title: The container holds no content
+    decision: |
+      The container document carries the document class, the preamble include,
+      the input list, and the bibliography, and nothing else.
+    benefits:
+      - Regenerating it on a roster change cannot disturb a chapter
+      - Hand edits to the preamble survive regeneration
+      - Chapter fragments stay editable without touching the preamble
+    alternatives_rejected:
+      - "A standalone document per chapter: the preamble is then duplicated and the fragments cannot be composed."
+      - "Generating the preamble too: authors adjust preambles, and a generator that overwrites them is one the pipeline works around."
+
+  - id: D5
+    title: Front matter renders by template, not through the markdown path
+    decision: |
+      Title, subtitle, author, and date render through Go templates and the
+      escaper. Only the abstract and the remaining body go through the chapter
+      path.
+    benefits:
+      - Metadata reaches the commands that expect it rather than becoming body text
+      - The author's mailto link becomes an address rather than a link command
+      - The path has no dependency beyond the escaper and text/template
+    alternatives_rejected:
+      - "Converting the whole title page as a chapter: the metadata comes out as prose under a heading, which is what the retired build did wrong."
+
+  - id: D6
+    title: The emitted LaTeX is constrained by the backport
+    decision: |
+      We emit the plain caption and label forms and avoid wrapper environments,
+      so the reader the pipeline uses for the reverse direction recovers edits
+      as prose.
+    benefits:
+      - The round trip stays usable while the reverse direction stays on pandoc
+      - The emitted LaTeX is what an author expects to hand-edit
+      - Float families stay interchangeable from the reader's side
+    alternatives_rejected:
+      - "Emitting whatever compiles: it passes latexmk and breaks the backport, which is the failure the pipeline cannot see until an edit is lost."
+
+  - id: D7
+    title: Only the ten LaTeX specials are escaped
+    decision: |
+      Text nodes escape the ten characters LaTeX treats as markup. Unicode
+      passes through as written.
+    benefits:
+      - Corpus titles carrying Greek, math, and accented names render as written
+      - The escaper stays a small pure function with no character tables
+      - The front-matter and chapter paths share one escaper exactly
+    alternatives_rejected:
+      - "Transliterating Unicode into LaTeX accent commands: it assumes an eight-bit engine the pipeline does not use, and it mangles names."
+
+  - id: D8
+    title: Tables are tabularx, never longtable
+    decision: |
+      A table renders as a tabularx inside a float, in the single-column or
+      two-column variant. A table that would need longtable is an error.
+    benefits:
+      - Floats place correctly in a two-column class, which longtable does not
+      - Column widths are computable from the cell contents
+      - The float and its caption stay in the form the backport requires
+    alternatives_rejected:
+      - "Longtable for wide tables: a two-column class has nowhere to put a page-breaking table, so it produces a broken build rather than a wide one."
+
+technology_choices:
+  - choice: Go
+    rationale: |
+      The consuming pipeline is Go, so the library is a call rather than a
+      process, and its tests run in the same suite as the pipeline's.
+  - choice: goldmark
+    rationale: |
+      CommonMark-conformant, with the extension points the mapping needs: an
+      inline parser interface for citations and a node renderer interface for
+      everything else. Its GitHub-flavored table extension matches the pipe
+      tables the manuscripts write.
+  - choice: text/template
+    rationale: |
+      The front-matter blocks are fixed shapes with substituted fields, which
+      is what a template is for. Escaping happens before substitution, so the
+      template does no escaping of its own.
+  - choice: yaml.v3 in strict mode
+    rationale: |
+      Title-page frontmatter and the docs layer both parse strictly, so a
+      duplicate key is an error rather than a silently dropped field.
+
+project_structure: |
+  mdtotex (module root)   Public surface: chapter conversion, front-matter
+                          rendering, container generation, and Options.
+  internal/latex/         The escaper and the LaTeX string helpers.
+  internal/render/        The renderer core and the node renderers for floats,
+                          passthrough, and the citation node.
+  internal/cite/          The goldmark inline parser extension for citations.
+  internal/frontmatter/   Title-page decoding and the block templates.
+  internal/container/     Container document generation.
+  docs/                   VISION.yaml, ARCHITECTURE.yaml, srd/, README.md.
+  magefile.go             Audit, Test, and Lint targets.
+
+implementation_status:
+  summary: |
+    Specification layer only. No component is implemented; the SRDs are the
+    gate each implementation issue opens against.
+  components:
+    - name: Front-matter renderer
+      status: specified-pending
+      note: "Behavioral reference exists in paperkit's frontmatter.go."
+    - name: Renderer core
+      status: specified-pending
+    - name: Escaper
+      status: specified-pending
+      note: "Behavioral reference exists in paperkit's escapeLaTeX."
+    - name: Figure handling
+      status: specified-pending
+    - name: Table handling
+      status: specified-pending
+    - name: Citation extension
+      status: specified-pending
+    - name: Raw-LaTeX passthrough
+      status: specified-pending
+    - name: Container generator
+      status: specified-pending
+    - name: Backport compatibility
+      status: specified-pending
+
+related_documents:
+  - path: docs/VISION.yaml
+    role: "Goals, boundaries, and the phases this decomposition serves."
+  - path: docs/srd/
+    role: "One SRD per component; the requirements of record."
+  - path: docs/README.md
+    role: "The docs layer and its traceability chain."
+  - path: README.md
+    role: "The public description of the library."
