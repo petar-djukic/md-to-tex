@@ -40,9 +40,7 @@ type Result struct {
 // an error naming the source, the line, and the construct, and no fragment
 // (R1.3, R6.4).
 func Convert(source []byte, name string, options Options) (Result, error) {
-	fragment, labels, err := render.Convert(source, name, render.Config{
-		Citations: options.citations(),
-	})
+	fragment, labels, err := render.Convert(source, name, options.renderConfig())
 	if err != nil {
 		// A conversion that failed produced no fragment, so its labels
 		// describe nothing (srd002-renderer-core R7.2).

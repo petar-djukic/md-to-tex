@@ -1,6 +1,9 @@
 package mdtotex
 
-import "github.com/petar-djukic/md-to-tex/internal/cite"
+import (
+	"github.com/petar-djukic/md-to-tex/internal/cite"
+	"github.com/petar-djukic/md-to-tex/internal/render"
+)
 
 // Options is what a caller configures for a conversion.
 //
@@ -16,6 +19,17 @@ type Options struct {
 	// valid key, so every citation fails against it. The two are
 	// distinguishable, which is what srd006-citations R3.2 requires.
 	CitationKeys []string
+
+	// TableFontSize is the size command a table float carries. A nil value
+	// takes the default one step below the body; a pointer to an empty string
+	// emits none, which is how a caller asks for body-size tables
+	// (srd005-tables R2.7).
+	TableFontSize *string
+}
+
+// renderConfig is what the chapter path needs from the caller's options.
+func (o Options) renderConfig() render.Config {
+	return render.Config{Citations: o.citations(), TableSize: o.TableFontSize}
 }
 
 // citations converts the caller's keys into the set the renderer validates
