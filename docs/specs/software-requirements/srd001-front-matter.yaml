@@ -1,4 +1,4 @@
-id: srd-1-front-matter
+id: srd001-front-matter
 title: Front-matter Renderer
 
 problem: |
@@ -40,7 +40,7 @@ requirements:
       - R2.1: 'The title block must emit a title command whose argument is the escaped title, then an author command when the author is non-empty, then a maketitle command, each on its own line and in that order.'
       - R2.2: 'A non-empty subtitle must join the title inside the same title command, separated by a LaTeX line break followed by a large size command. IEEEtran provides no subtitle command, and a second title line lands in the author block.'
       - R2.3: The date must be decoded and must not be emitted. IEEEtran's title block has no date slot; a caller who needs one writes it into the preamble.
-      - R2.4: Title and subtitle text must pass through the escaper (srd-3-escaping) before substitution into the template. The template performs no escaping of its own.
+      - R2.4: Title and subtitle text must pass through the escaper (srd003-escaping) before substitution into the template. The template performs no escaping of its own.
     examples:
       - markdown: |
           ---
@@ -72,11 +72,11 @@ requirements:
   R4:
     title: Abstract and body
     items:
-      - R4.1: A non-empty abstract must render as an abstract environment whose content is the abstract markdown converted through the chapter path (srd-2-renderer-core), not escaped. The abstract carries the paper's own emphasis and terminology.
+      - R4.1: A non-empty abstract must render as an abstract environment whose content is the abstract markdown converted through the chapter path (srd002-renderer-core), not escaped. The abstract carries the paper's own emphasis and terminology.
       - R4.2: An empty abstract emits no abstract environment at all, not an empty one.
-      - R4.3: The body remaining after the abstract is accounted for must be converted through the chapter path and emitted after the abstract environment, so a raw-LaTeX keywords block survives as written (srd-7-passthrough).
+      - R4.3: The body remaining after the abstract is accounted for must be converted through the chapter path and emitted after the abstract environment, so a raw-LaTeX keywords block survives as written (srd007-passthrough).
       - R4.4: 'The output order is fixed: title block, abstract environment, body. Each block is separated from the next by a single newline, and the fragment ends with exactly one newline.'
-      - R4.5: The fragment carries no preamble and no document environment. The container inputs it (srd-8-container).
+      - R4.5: The fragment carries no preamble and no document environment. The container inputs it (srd008-container).
     examples:
       - markdown: |
           ---
@@ -113,13 +113,13 @@ requirements:
 non_goals:
   - "Reading files. The caller supplies the bytes and the name used in error messages."
   - "Rendering the acknowledgments section, which is the caller's."
-  - "Emitting a preamble, a document class, or a bibliography (srd-8-container)."
+  - "Emitting a preamble, a document class, or a bibliography (srd008-container)."
   - "Deciding where the fragment is written or whether it overwrites an existing file."
 
 acceptance_criteria:
   - id: AC1
     criterion: A title page whose abstract is a frontmatter field and whose body is a raw-LaTeX keywords block renders the abstract environment before the keywords block, with the keywords block unescaped.
-    traces: [R1.6, R4.1, R4.3, R4.4]
+    traces: [R1.1, R1.2, R1.6, R2.1, R4.1, R4.3, R4.4, R4.5]
   - id: AC2
     criterion: A title page whose abstract is marked in the body with a bold-italic run renders the same abstract environment, and the marker itself does not appear in the output.
     traces: [R1.7, R4.1]
@@ -135,3 +135,24 @@ acceptance_criteria:
   - id: AC6
     criterion: The title-page fixtures in paperkit's frontmatter_test.go produce the same title, author, and abstract content through this renderer.
     traces: [R5.1, R5.2]
+  - id: AC7
+    criterion: An author written as a plain name renders as the escaped name alone, and an author written as a list joins with the word and before rendering as one escaped string.
+    traces: [R1.5, R3.3, R3.4]
+  - id: AC8
+    criterion: A page stating a date decodes it and emits no date command, because IEEEtran has no slot for one.
+    traces: [R2.3]
+  - id: AC9
+    criterion: A title carrying LaTeX special characters appears escaped inside the title command, demonstrating that the escaping happened before substitution rather than inside the template.
+    traces: [R2.4]
+  - id: AC10
+    criterion: A page with no abstract emits no abstract environment at all, rather than an empty one.
+    traces: [R4.2]
+  - id: AC11
+    criterion: Rendering a title page emits no acknowledgment section, and the component exposes no entry point for one.
+    traces: [R5.3]
+
+depends_on:
+  - srd_id: srd002-renderer-core
+    symbols_used: [R1, R4]
+  - srd_id: srd003-escaping
+    symbols_used: [R1, R3]

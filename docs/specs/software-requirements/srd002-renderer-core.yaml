@@ -1,4 +1,4 @@
-id: srd-2-renderer-core
+id: srd002-renderer-core
 title: Renderer Core
 
 problem: |
@@ -31,13 +31,13 @@ requirements:
       - R1.1: Chapter conversion must accept the source bytes, a name used only in error messages, and an Options value, and must return the LaTeX fragment or an error. It must not open, read, or write any file.
       - R1.2: Conversion must be deterministic - the same source and Options produce byte-identical output on every call - and must be safe to call concurrently, holding no state between calls.
       - R1.3: An error must name the source, the line, and the construct that failed, and must be returned instead of a fragment. A conversion never returns partial output alongside an error.
-      - R1.4: 'The fragment must carry no preamble, no document class, and no document environment: the container inputs it (srd-8-container).'
+      - R1.4: 'The fragment must carry no preamble, no document class, and no document environment: the container inputs it (srd008-container).'
       - R1.5: The fragment must end with exactly one newline, and must not begin with a blank line.
   R2:
     title: Options
     items:
       - R2.1: Options must be a plain value the caller constructs, carrying no file paths to read and no callbacks. The caller may hold it in its own configuration; this library reads no configuration file.
-      - R2.2: 'Options must carry the fields the chapter path uses: the set of valid citation keys (srd-6-citations), the graphics path prefix stripped from figure targets (srd-4-figures), and the thresholds that select a two-column float (srd-4-figures, srd-5-tables). The container fields live with srd-8-container.'
+      - R2.2: 'Options must carry the fields the chapter path uses: the set of valid citation keys (srd006-citations), the graphics path prefix stripped from figure targets (srd004-figures), and the thresholds that select a two-column float (srd004-figures, srd005-tables). The container fields live with srd008-container.'
       - R2.3: A zero Options value must convert a chapter containing no citations and no floats. Absent thresholds take the defaults the float SRDs state; an absent citation key set disables key validation rather than failing every citation.
   R3:
     title: Headings
@@ -45,7 +45,7 @@ requirements:
       - R3.1: 'Heading levels map to IEEEtran sectioning commands: level one to section, level two to subsection, level three to subsubsection, level four to paragraph.'
       - R3.2: A heading of level five or deeper is an error under R1.3. IEEEtran provides no command below paragraph.
       - R3.3: Heading text passes through the escaper and may carry inline constructs, which render as they do in a paragraph.
-      - R3.4: A heading carrying an identifier attribute must emit a label command with that identifier immediately after the sectioning command, on the same line, so a raw reference elsewhere resolves (srd-7-passthrough).
+      - R3.4: A heading carrying an identifier attribute must emit a label command with that identifier immediately after the sectioning command, on the same line, so a raw reference elsewhere resolves (srd007-passthrough).
       - R3.5: A heading with no identifier attribute must emit a label carrying the identifier derived from its text - lowercased, every run of characters outside the ASCII letters and digits collapsed to a single hyphen, leading and trailing hyphens removed. The manuscripts reference sections by that slug, which pandoc derived for them, so a renderer that labels only explicit identifiers leaves those references dangling.
       - R3.6: A derived identifier that collides with another in the same chapter is an error naming both headings. Pandoc disambiguates collisions by appending a counter, which makes the second reference depend on heading order; an error makes the author name one of them. Collisions across chapters are R7's, because one conversion never sees another chapter.
       - R3.7: A chapter's first heading is emitted like any other. The renderer does not drop, renumber, or promote headings.
@@ -65,11 +65,11 @@ requirements:
   R4:
     title: Paragraphs and inline text
     items:
-      - R4.1: A paragraph emits its rendered inline content followed by a blank line. Paragraph text reaches the buffer only through the escaper (srd-3-escaping).
+      - R4.1: A paragraph emits its rendered inline content followed by a blank line. Paragraph text reaches the buffer only through the escaper (srd003-escaping).
       - R4.2: 'Emphasis renders as an emphasis command and strong emphasis as a bold command: the argument is the rendered inline content, not the raw source.'
       - R4.3: Inline code renders as a monospace command whose argument is the escaped code text.
       - R4.4: A soft line break emits a newline, preserving the source's line structure so a backported edit diffs by line. A hard line break emits a LaTeX line break.
-      - R4.5: A link whose text equals its target renders as a url command; any other link renders as an href command with the target first and the rendered text second. The container's preamble supplies hyperref (srd-8-container, srd-9-backport-compatibility).
+      - R4.5: A link whose text equals its target renders as a url command; any other link renders as an href command with the target first and the rendered text second. The container's preamble supplies hyperref (srd008-container, srd009-backport-compatibility).
     examples:
       - markdown: |
           The *escaper* handles the ten `special` characters.
@@ -81,7 +81,7 @@ requirements:
       - R5.1: A bullet list renders as an itemize environment and an ordered list as an enumerate environment, each item introduced by an item command.
       - R5.2: Nested lists render as nested environments. Nesting depth is not limited by this library; LaTeX's own limit applies.
       - R5.3: A block quote renders as a quote environment holding its rendered content.
-      - R5.4: A fenced or indented code block whose info string is absent or is not a raw-LaTeX marker renders as a verbatim environment holding the code text unescaped and unmodified. A raw-LaTeX marker takes the passthrough path (srd-7-passthrough).
+      - R5.4: A fenced or indented code block whose info string is absent or is not a raw-LaTeX marker renders as a verbatim environment holding the code text unescaped and unmodified. A raw-LaTeX marker takes the passthrough path (srd007-passthrough).
       - R5.5: A list item's content renders as block content, so a paragraph inside an item behaves as R4.1 states.
     examples:
       - markdown: |
@@ -95,11 +95,11 @@ requirements:
   R6:
     title: Dispatch and the edge of the mapping
     items:
-      - R6.1: An image block, a table, a citation, and raw LaTeX are dispatched to the components that own them (srd-4-figures, srd-5-tables, srd-6-citations, srd-7-passthrough). The core neither duplicates nor overrides their output.
+      - R6.1: An image block, a table, a citation, and raw LaTeX are dispatched to the components that own them (srd004-figures, srd005-tables, srd006-citations, srd007-passthrough). The core neither duplicates nor overrides their output.
       - R6.2: 'No renderer writes a text node directly: text reaches the buffer through the escaper or through the passthrough renderer, which declares it raw. A renderer that writes text by any other route is a defect in this component even when its output happens to compile.'
       - R6.3: An HTML comment is dropped, so the backlink comments the manuscripts carry under their headings do not reach the LaTeX. Any other raw HTML is an error under R1.3.
       - R6.4: A construct with no mapping - a thematic break, a definition list, a footnote, a task list item - is an error under R1.3 naming the construct. Silent omission is forbidden.
-      - R6.5: The set of mapped constructs is what the manuscripts use. Widening it is an SRD change, and an author who needs a construct today writes it as raw LaTeX (srd-7-passthrough).
+      - R6.5: The set of mapped constructs is what the manuscripts use. Widening it is an SRD change, and an author who needs a construct today writes it as raw LaTeX (srd007-passthrough).
   R7:
     title: Emitted labels and collisions across chapters
     items:
@@ -109,20 +109,20 @@ requirements:
       - R7.4: 'The check is a function over reports, not over fragments or files. It reads nothing, so a caller holding conversions in memory calls it without writing them out first, and R1.1 continues to hold for conversion itself.'
       - R7.5: 'An identifier the author stated in two chapters is reported the same way as two derived ones. Both break the same compile, and the check does not rank one as more the author''s fault.'
       - R7.6: 'The check reports rather than fails: it returns the collisions and lets the caller decide, because a paper mid-edit may carry a collision the author is on the way to fixing, and a library that refuses to proceed is one the caller works around.'
-      - R7.7: 'Prefixing derived labels with the chapter stem, as the pipeline''s current build does, is forbidden. It resolves collisions and breaks every cross-chapter reference, because a reference written as a raw command passes through untouched (srd-7-passthrough R2.1) and would then point at an identifier the renderer renamed.'
+      - R7.7: 'Prefixing derived labels with the chapter stem, as the pipeline''s current build does, is forbidden. It resolves collisions and breaks every cross-chapter reference, because a reference written as a raw command passes through untouched (srd007-passthrough R2.1) and would then point at an identifier the renderer renamed.'
 
 non_goals:
   - "Parsing markdown. Goldmark parses; this component renders."
   - "Resolving a collision the check finds. Renaming a heading or stating an identifier is an author's edit (R7.7 forbids the renaming this library could do on its own)."
   - "Reading or writing files, and deciding where a fragment lands."
-  - "Rendering the title page, which has its own path (srd-1-front-matter)."
+  - "Rendering the title page, which has its own path (srd001-front-matter)."
   - "Pandoc parity. The mapping covers the manuscripts' constructs and passes the rest through as raw LaTeX."
   - "Compiling LaTeX or validating that the fragment typesets."
 
 acceptance_criteria:
   - id: AC1
     criterion: A chapter of headings, paragraphs, emphasis, lists, quotes, and code converts to a fragment that compiles under IEEEtran with no preamble of its own.
-    traces: [R1.4, R3.1, R4.1, R5.1, R5.3, R5.4]
+    traces: [R1.4, R3.1, R3.7, R4.1, R4.2, R4.3, R5.1, R5.2, R5.3, R5.4, R5.5]
   - id: AC2
     criterion: Converting the same chapter twice yields byte-identical output, and conversion touches no file.
     traces: [R1.1, R1.2]
@@ -137,7 +137,7 @@ acceptance_criteria:
     traces: [R3.5, R3.6]
   - id: AC8
     criterion: Two chapters whose headings derive the same identifier are reported by the collision check, naming both chapters and the heading text behind each, before the document is compiled.
-    traces: [R7.1, R7.3]
+    traces: [R7.1, R7.3, R7.5]
   - id: AC9
     criterion: The collision check runs against reports held in memory, touching no file, and returns collisions rather than an error.
     traces: [R7.4, R7.6]
@@ -149,4 +149,32 @@ acceptance_criteria:
     traces: [R4.1, R6.2]
   - id: AC6
     criterion: A zero Options value converts a chapter with no citations and no floats without error.
-    traces: [R2.3]
+    traces: [R2.1, R2.3]
+  - id: AC11
+    criterion: A fragment ends with exactly one newline and does not begin with a blank line, whatever blank lines the source carried.
+    traces: [R1.5]
+  - id: AC12
+    criterion: Options carries the citation key set, the graphics path, and the float width thresholds, and a caller constructs it without the library reading any configuration file.
+    traces: [R2.2]
+  - id: AC13
+    criterion: A heading carrying emphasis and LaTeX special characters renders them as a paragraph would, escaped and marked up.
+    traces: [R3.3]
+  - id: AC14
+    criterion: A soft line break keeps the source line structure and a hard line break emits a LaTeX line break, so a backported edit diffs by line.
+    traces: [R4.4]
+  - id: AC15
+    criterion: A link whose text equals its target renders as a url command, and any other link renders as an href command carrying the target and the rendered text.
+    traces: [R4.5]
+  - id: AC16
+    criterion: A citation renders through the citation component and a figure or table is dispatched to its own, with the core neither duplicating nor overriding what they emit.
+    traces: [R6.1]
+  - id: AC17
+    criterion: A construct outside the mapping fails, and the same content written as raw LaTeX converts, so an author proceeds without waiting for the mapping to widen.
+    traces: [R6.5]
+  - id: AC18
+    criterion: A successful conversion returns the fragment and its label report together, and a failed one returns neither.
+    traces: [R7.2]
+
+depends_on:
+  - srd_id: srd003-escaping
+    symbols_used: [R1, R3]

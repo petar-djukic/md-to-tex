@@ -1,0 +1,193 @@
+# Copyright (c) 2026 Petar Djukic. All rights reserved. SPDX-License-Identifier: MIT
+
+id: test-rel00.2-floats
+title: Test Suite for Release 00.2 Floats
+release: "00.2"
+
+overview: |
+  This suite plans the evidence for the float renderers and the backport
+  constraint they answer to. Its cases carry no Go test yet: the components
+  land with rel00.2, and each case names the acceptance criteria that
+  release has to satisfy. The backport cases run against the reader the
+  consuming pipeline uses, so they are skipped where that reader is absent.
+
+traces:
+  - rel00.2-uc001-floats-in-two-columns
+
+preconditions:
+  - The text core of rel00.1 converts a prose chapter end to end.
+  - 'The float renderers are implemented: srd004-figures and srd005-tables.'
+  - The pipeline reader is available for the backport cases, which skip cleanly where it is not.
+
+test_cases:
+  - name: 'A figure renders as the float shape the manuscripts hand-write'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC1: An image block with alt text and an identifier renders byte-for-
+      byte as the R2 example, including the placement specifier and the
+      centering command.
+    traces:
+      - srd004-figures AC1
+  - name: 'The wide class and the width attribute select the environment and the measure'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC2: The wide class produces the starred environment at text width, and
+      a width attribute scales the include against the correct measure in each
+      case.
+    traces:
+      - srd004-figures AC2
+  - name: 'The figure file name survives the crossing, directory dropped and extension kept'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC3: A figure referenced in markdown as a PDF under a directory is
+      included as the same file name with no directory and no extension
+      change.
+    traces:
+      - srd004-figures AC3
+  - name: 'A figure missing its alt text, identifier, or a sane width fails naming the file and line'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC4: An image with no alt text, an image with no identifier, a width of
+      zero, and a remote target each fail with an error naming the file and
+      line.
+    traces:
+      - srd004-figures AC4
+  - name: 'No emitted figure carries a wrapper between the float and its caption'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC5: No emitted figure contains an adjustbox environment or any wrapper
+      between the float and its caption.
+    traces:
+      - srd004-figures AC5
+  - name: 'A table renders as a float whose caption precedes the tabularx'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC1: A three-column table with a caption line renders as a float whose
+      caption precedes the tabularx and whose label follows the caption, with
+      plain caption and label commands and no counter stepping.
+    traces:
+      - srd005-tables AC1
+  - name: 'Column weights sum to the column count, each within its floor and clamp'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC2: The weighting applied to a table whose columns hold short, medium,
+      and long cells produces weights summing to the column count, each at or
+      above its floor and at or below the clamp.
+    traces:
+      - srd005-tables AC2
+  - name: 'The two-column decision follows the column count, the widest cell, and the estimated height'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC3: A five-column table, a two-column table of 200-character cells, and
+      a fifteen-row table of modest cells each select the starred environment;
+      a small three-column table does not.
+    traces:
+      - srd005-tables AC3
+  - name: 'A table with no caption line, and a caption line with no identifier, each fail'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC4: A pipe table with no caption line, and a caption line with no
+      identifier, each fail with an error naming the file and line.
+    traces:
+      - srd005-tables AC4
+  - name: 'No emitted table carries longtable, a strip environment, or a bold header row'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC5: No emitted table contains longtable, a strip environment, or a bold
+      header row.
+    traces:
+      - srd005-tables AC5
+  - name: 'A Table paragraph that follows no table renders as ordinary prose'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC6: A paragraph opening with the word Table and a colon that does not
+      follow a table renders as an ordinary paragraph.
+    traces:
+      - srd005-tables AC6
+  - name: 'Cells holding citations render the cite command'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC7: Cells holding citations render the cite command, demonstrating that
+      cell content takes the inline path.
+    traces:
+      - srd005-tables AC7
+  - name: 'A table with nothing to measure falls back to equal-width columns'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC8: A table whose cells offer nothing to measure falls back to equal-
+      width columns rather than failing.
+    traces:
+      - srd005-tables AC8
+  - name: 'Every emitted construct reads back with its caption, paragraph, and cell text as prose'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC1: Every fixture in the corpus reads back with its caption, paragraph,
+      and cell text as prose, none of it inside a raw block.
+    traces:
+      - srd009-backport-compatibility AC1
+  - name: 'A caption edited in an emitted float comes back as a prose difference confined to the caption'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC2: A caption edited in an emitted figure and in an emitted table both
+      come back as a prose difference confined to the caption.
+    traces:
+      - srd009-backport-compatibility AC2
+  - name: 'The forbidden forms appear nowhere in the emitted output'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC3: A grep over the library's output for adjustbox, refstepcounter, a
+      strip environment, and longtable finds nothing.
+    traces:
+      - srd009-backport-compatibility AC3
+  - name: 'An emitted table header carries no emphasis, and a backported table differs only in edited cells'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC4: An emitted table's header row carries no emphasis, and a backported
+      table differs from its source in edited cells only.
+    traces:
+      - srd009-backport-compatibility AC4
+  - name: 'A float-placement edit produces no prose difference'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC5: A float-placement edit made in an emitted float produces no prose
+      difference, confirming the typesetting boundary rather than a failure.
+    traces:
+      - srd009-backport-compatibility AC5
+  - name: 'The fixture tests skip where the reader is absent and run where it is present'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC6: The fixture tests skip cleanly where the reader is absent and run
+      where it is present.
+    traces:
+      - srd009-backport-compatibility AC6
+  - name: 'Options carries the graphics path and the float width thresholds the float renderers read'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    status: planned
+    description: |
+      AC12: Options carries the citation key set, the graphics path, and the
+      float width thresholds, and a caller constructs it without the library
+      reading any configuration file. The citation key set is proven by the
+      text core; the other two fields arrive with the float renderers, which
+      is why docs/road-map.yaml records srd002-renderer-core R2.2 as deferred
+      to this release.
+    traces:
+      - srd002-renderer-core AC12

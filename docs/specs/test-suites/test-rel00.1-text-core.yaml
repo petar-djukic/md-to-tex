@@ -1,0 +1,722 @@
+# Copyright (c) 2026 Petar Djukic. All rights reserved. SPDX-License-Identifier: MIT
+
+id: test-rel00.1-text-core
+title: Test Suite for Release 00.1 Text Core
+release: "00.1"
+
+overview: |
+  This suite carries the evidence for the text core: the escaper, the citation
+  extension, the renderer core, and raw-LaTeX passthrough. Every case names
+  the Go test that proves it and the requirements that test covers, so the
+  test-evidence audit resolves each claim against the Go test inventory rather
+  than against a convention in a comment.
+
+  The suite is the source of requirement coverage for this release. A
+  requirement no case names is uncovered, and two are uncovered by
+  construction: srd002-renderer-core R2.2 names the graphics path and float
+  thresholds that arrive with rel00.2, and srd003-escaping R3.3 names the
+  front-matter templates that arrive with rel00.3. Both are recorded as
+  deferred in docs/road-map.yaml.
+
+traces:
+  - rel00.1-uc001-prose-chapter-to-fragment
+  - rel00.1-uc002-cross-chapter-label-collisions
+
+preconditions:
+  - The module builds and its tests run with the Go toolchain alone; no external checkout is needed.
+  - 'The tests are hermetic: conversion opens no file, so no fixture directory is staged.'
+
+test_cases:
+  - name: 'every label the fragment carries, with its heading and whether the author stated it'
+    use_case: rel00.1-uc002-cross-chapter-label-collisions
+    go_test: TestConvertReportsItsLabels
+    status: done
+    description: |
+      TestConvertReportsItsLabels covers srd002-renderer-core R7.1: every label
+      the fragment carries, with its heading and whether the author stated it.
+    traces:
+      - srd002-renderer-core R7.1
+      - srd002-renderer-core AC8
+  - name: 'the labels of a fragment that was never produced describe nothing'
+    use_case: rel00.1-uc002-cross-chapter-label-collisions
+    go_test: TestFailedConversionReportsNoLabels
+    status: done
+    description: |
+      TestFailedConversionReportsNoLabels covers srd002-renderer-core R7.2: the
+      labels of a fragment that was never produced describe nothing.
+    traces:
+      - srd002-renderer-core R7.2
+      - srd002-renderer-core AC18
+  - name: 'two chapters deriving the same identifier are reported with both chapters and the heading behind each, before anything i'
+    use_case: rel00.1-uc002-cross-chapter-label-collisions
+    go_test: TestCollisionsNameBothChapters
+    status: done
+    description: |
+      TestCollisionsNameBothChapters covers srd002-renderer-core R7.3 and AC8:
+      two chapters deriving the same identifier are reported with both chapters
+      and the heading behind each, before anything is compiled.
+    traces:
+      - srd002-renderer-core R7.3
+  - name: 'distinct identifiers are not a collision'
+    use_case: rel00.1-uc002-cross-chapter-label-collisions
+    go_test: TestCollisionsReportsNothingWhenChaptersAgree
+    status: done
+    description: |
+      TestCollisionsReportsNothingWhenChaptersAgree covers srd002-renderer-core
+      R7.3: distinct identifiers are not a collision.
+    traces:
+      - srd002-renderer-core R7.3
+  - name: 'both break the same compile, so both are reported the same way'
+    use_case: rel00.1-uc002-cross-chapter-label-collisions
+    go_test: TestCollisionsTreatStatedAndDerivedAlike
+    status: done
+    description: |
+      TestCollisionsTreatStatedAndDerivedAlike covers srd002-renderer-core R7.5:
+      both break the same compile, so both are reported the same way.
+    traces:
+      - srd002-renderer-core R7.5
+  - name: 'a function over reports held in memory, returning collisions rather than an error'
+    use_case: rel00.1-uc002-cross-chapter-label-collisions
+    go_test: TestCollisionsReadsNothingAndReturnsCollisions
+    status: done
+    description: |
+      TestCollisionsReadsNothingAndReturnsCollisions covers srd002-renderer-core
+      R7.4, R7.6, and AC9: a function over reports held in memory, returning
+      collisions rather than an error.
+    traces:
+      - srd002-renderer-core R7.4
+      - srd002-renderer-core R7.6
+      - srd002-renderer-core AC9
+  - name: 'no chapter stem is prefixed, so a cross-chapter reference written as raw LaTeX still points at the identifier the chapte'
+    use_case: rel00.1-uc002-cross-chapter-label-collisions
+    go_test: TestLabelsDoNotDependOnTheirCompany
+    status: done
+    description: |
+      TestLabelsDoNotDependOnTheirCompany covers srd002-renderer-core R7.7 and
+      AC10: no chapter stem is prefixed, so a cross-chapter reference written as
+      raw LaTeX still points at the identifier the chapter emits.
+    traces:
+      - srd002-renderer-core R7.7
+      - srd002-renderer-core AC10
+  - name: 'one identifier shared by three chapters is one collision naming all three'
+    use_case: rel00.1-uc002-cross-chapter-label-collisions
+    go_test: TestCollisionsAcrossManyChapters
+    status: done
+    description: |
+      TestCollisionsAcrossManyChapters covers srd002-renderer-core R7.3 at the
+      scale a manuscript reaches: one identifier shared by three chapters is one
+      collision naming all three.
+    traces:
+      - srd002-renderer-core R7.3
+  - name: 'source bytes and a name in, a fragment out, no file touched and no preamble emitted'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestConvertRendersAChapter
+    status: done
+    description: |
+      TestConvertRendersAChapter covers srd002-renderer-core R1.1 and R1.4
+      across the public surface: source bytes and a name in, a fragment out, no
+      file touched and no preamble emitted.
+    traces:
+      - srd002-renderer-core R1.1
+      - srd002-renderer-core R1.4
+      - srd002-renderer-core AC2
+  - name: 'nil turns validation off, an empty non-nil slice holds no valid key'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestOptionsDistinguishAbsentFromEmptyKeys
+    status: done
+    description: |
+      TestOptionsDistinguishAbsentFromEmptyKeys covers srd002-renderer-core R2.3
+      and srd006-citations R3.2 through the public Options: nil turns validation
+      off, an empty non-nil slice holds no valid key.
+    traces:
+      - srd002-renderer-core R2.3
+      - srd006-citations R3.2
+      - srd002-renderer-core AC6
+  - name: 'a conversion never returns partial output alongside an error'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestConvertReturnsNoFragmentWithAnError
+    status: done
+    description: |
+      TestConvertReturnsNoFragmentWithAnError covers srd002-renderer-core R1.3:
+      a conversion never returns partial output alongside an error.
+    traces:
+      - srd002-renderer-core R1.3
+  - name: 'Options is a plain value, so a caller constructs it in Go and the library reads no configuration file of its own'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestConvertReadsNoConfiguration
+    status: done
+    description: |
+      TestConvertReadsNoConfiguration covers srd002-renderer-core R2.1: Options
+      is a plain value, so a caller constructs it in Go and the library reads no
+      configuration file of its own.
+    traces:
+      - srd002-renderer-core R2.1
+  - name: 'single and grouped runs, the key character set, and duplicates kept in order'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestParseRecognisesTheCitationForms
+    status: done
+    description: |
+      TestParseRecognisesTheCitationForms covers srd006-citations R1.1, R1.2,
+      and R1.4: single and grouped runs, the key character set, and duplicates
+      kept in order.
+    traces:
+      - srd006-citations R1.1
+      - srd006-citations R1.2
+      - srd006-citations R1.4
+      - srd006-citations AC1
+      - srd006-citations AC6
+  - name: 'srd006-citations R2.1 and R2.2 with the examples the SRD states, and AC1. R2.2 holds because a key carrying an underscor'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestRenderEmitsTheCiteCommand
+    status: done
+    description: |
+      TestRenderEmitsTheCiteCommand covers srd006-citations R2.1 and R2.2 with
+      the examples the SRD states, and AC1. R2.2 holds because a key carrying an
+      underscore reaches the cite command unescaped, which the last case shows.
+    traces:
+      - srd006-citations R2.1
+      - srd006-citations R2.2
+  - name: 'the first offending key, with the offset a caller turns into a line'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestValidateReportsAnUnknownKey
+    status: done
+    description: |
+      TestValidateReportsAnUnknownKey covers srd006-citations R3.1 and R3.4 and
+      AC2: the first offending key, with the offset a caller turns into a line.
+    traces:
+      - srd006-citations R3.1
+      - srd006-citations R3.4
+      - srd006-citations AC2
+  - name: 'no key set means validation is off, an empty set means nothing is valid, and both sets come from the caller because the '
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestValidateDistinguishesAbsentFromEmpty
+    status: done
+    description: |
+      TestValidateDistinguishesAbsentFromEmpty covers srd006-citations R3.2,
+      R3.3, and AC3: no key set means validation is off, an empty set means
+      nothing is valid, and both sets come from the caller because the library
+      never reads a reference corpus.
+    traces:
+      - srd006-citations R3.2
+      - srd006-citations R3.3
+      - srd006-citations AC3
+  - name: 'srd006-citations R4.1, R4.2, R4.3, and R4.5, and AC4'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestParseDeclinesWhatIsNotACitation
+    status: done
+    description: |
+      TestParseDeclinesWhatIsNotACitation covers srd006-citations R4.1, R4.2,
+      R4.3, and R4.5, and AC4.
+    traces:
+      - srd006-citations R4.1
+      - srd006-citations R4.2
+      - srd006-citations R4.3
+      - srd006-citations R4.5
+      - srd006-citations AC4
+  - name: 'a trailing period or colon belongs to the sentence, not the key'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestParseGivesBackSentencePunctuation
+    status: done
+    description: |
+      TestParseGivesBackSentencePunctuation covers srd006-citations R1.2 and
+      AC6: a trailing period or colon belongs to the sentence, not the key.
+    traces:
+      - srd006-citations R1.2
+  - name: 'a citation is an inline node, so it parses in a heading and a list item as it does in a paragraph'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestCitationsParseWhereverInlineContentGoes
+    status: done
+    description: |
+      TestCitationsParseWhereverInlineContentGoes covers srd006-citations R2.3:
+      a citation is an inline node, so it parses in a heading and a list item as
+      it does in a paragraph.
+    traces:
+      - srd006-citations R2.3
+      - srd006-citations AC5
+  - name: 'the parser is registered as a goldmark inline parser on the opening bracket, and the node it produces holds the keys in '
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestParserIsTriggeredOnTheOpeningBracket
+    status: done
+    description: |
+      TestParserIsTriggeredOnTheOpeningBracket covers srd006-citations R1.3: the
+      parser is registered as a goldmark inline parser on the opening bracket,
+      and the node it produces holds the keys in order.
+    traces:
+      - srd006-citations R1.3
+  - name: 'nothing outside the ten changes'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestEscapeReplacesTheTenSpecials
+    status: done
+    description: |
+      TestEscapeReplacesTheTenSpecials covers srd003-escaping R1.1 and R1.3 with
+      the example the SRD states, and AC1: nothing outside the ten changes.
+    traces:
+      - srd003-escaping R1.1
+      - srd003-escaping R1.3
+      - srd003-escaping AC1
+      - srd003-escaping AC4
+  - name: 'srd003-escaping R1.1 character by character, so a table entry that goes missing names itself'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestEscapeReplacesEachSpecialOnce
+    status: done
+    description: |
+      TestEscapeReplacesEachSpecialOnce covers srd003-escaping R1.1 character by
+      character, so a table entry that goes missing names itself.
+    traces:
+      - srd003-escaping R1.1
+  - name: 'the backslashes the replacements introduce are not themselves escaped'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestEscapeIsSinglePass
+    status: done
+    description: |
+      TestEscapeIsSinglePass covers srd003-escaping R1.2 and AC2: the
+      backslashes the replacements introduce are not themselves escaped.
+    traces:
+      - srd003-escaping R1.2
+      - srd003-escaping AC2
+  - name: 'these strings compile as written under a Unicode-aware engine and are what the corpus actually carries'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestEscapePassesUnicodeThrough
+    status: done
+    description: |
+      TestEscapePassesUnicodeThrough covers srd003-escaping R2.1, R2.2, and
+      R2.3, and AC3. R2.2 is the xelatex assumption that makes passing Unicode
+      through safe: these strings compile as written under a Unicode-aware
+      engine and are what the corpus actually carries.
+    traces:
+      - srd003-escaping R2.1
+      - srd003-escaping R2.2
+      - srd003-escaping R2.3
+      - srd003-escaping AC3
+  - name: 'the output matches paperkit''s escapeLaTeX, which the manuscripts are written against. The fixtures are the title and aut'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestEscapeMatchesTheReferenceImplementation
+    status: done
+    description: |
+      TestEscapeMatchesTheReferenceImplementation covers srd003-escaping R1.1
+      and AC4: the output matches paperkit's escapeLaTeX, which the manuscripts
+      are written against. The fixtures are the title and author fields from
+      paperkit's own frontmatter tests.
+    traces:
+      - srd003-escaping R1.1
+  - name: 'the at sign, brackets, and parentheses are not LaTeX markup and are not escaped'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestEscapeLeavesOrdinaryPunctuationAlone
+    status: done
+    description: |
+      TestEscapeLeavesOrdinaryPunctuationAlone covers srd003-escaping R1.3: the
+      at sign, brackets, and parentheses are not LaTeX markup and are not
+      escaped.
+    traces:
+      - srd003-escaping R1.3
+  - name: 'a pure function from a string to a string, with no options argument and no error return. The assignment fails to compile'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestEscapeIsAPlainFunction
+    status: done
+    description: |
+      TestEscapeIsAPlainFunction covers srd003-escaping R3.1: a pure function
+      from a string to a string, with no options argument and no error return.
+      The assignment fails to compile if the signature grows either.
+    traces:
+      - srd003-escaping R3.1
+      - srd003-escaping AC6
+  - name: 'exactly one implementation of the replacement table exists, so the front-matter path and the node renderers cannot drift'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestOneReplacementTable
+    status: done
+    description: |
+      TestOneReplacementTable covers srd003-escaping R3.2 and AC5: exactly one
+      implementation of the replacement table exists, so the front-matter path
+      and the node renderers cannot drift apart. The marker is the
+      textasciicircum replacement, which appears nowhere else in a library that
+      escapes in one place. Tests are exempt: they assert against the
+      replacements and would otherwise count as implementations of them.
+    traces:
+      - srd003-escaping R3.2
+      - srd003-escaping AC5
+  - name: 'the commands survive, the prose around them escapes'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestInlineControlSequencesPassThrough
+    status: done
+    description: |
+      TestInlineControlSequencesPassThrough covers srd007-passthrough R2.1,
+      R2.4, and AC2 with the example the SRD states: the commands survive, the
+      prose around them escapes.
+    traces:
+      - srd007-passthrough R2.1
+      - srd007-passthrough R2.4
+  - name: 'raw content is written to the buffer directly and never reaches the escaper, while the prose beside it escapes'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestRawAndEscapedTextShareAParagraph
+    status: done
+    description: |
+      TestRawAndEscapedTextShareAParagraph covers srd007-passthrough R2.4, R3.1,
+      R4.1, srd003-escaping R3.4, and AC2 together: raw content is written to
+      the buffer directly and never reaches the escaper, while the prose beside
+      it escapes.
+    traces:
+      - srd003-escaping R3.4
+      - srd007-passthrough R2.4
+      - srd007-passthrough R3.1
+      - srd007-passthrough R4.1
+      - srd003-escaping AC8
+      - srd007-passthrough AC2
+      - srd007-passthrough AC5
+  - name: 'a group closes at the brace that balances its opening, so an argument holding braces is not cut short'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestNestedGroupsSurviveWhole
+    status: done
+    description: |
+      TestNestedGroupsSurviveWhole covers srd007-passthrough R2.2: a group
+      closes at the brace that balances its opening, so an argument holding
+      braces is not cut short.
+    traces:
+      - srd007-passthrough R2.2
+      - srd007-passthrough AC3
+  - name: 'the error names the command and the line rather than letting LaTeX report it somewhere else entirely'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestUnbalancedGroupIsAnError
+    status: done
+    description: |
+      TestUnbalancedGroupIsAnError covers srd007-passthrough R2.3 and AC3: the
+      error names the command and the line rather than letting LaTeX report it
+      somewhere else entirely.
+    traces:
+      - srd007-passthrough R2.3
+  - name: 'a backslash before anything but an ASCII letter is prose'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestBackslashInProseEscapes
+    status: done
+    description: |
+      TestBackslashInProseEscapes covers srd007-passthrough R3.1 and AC5: a
+      backslash before anything but an ASCII letter is prose.
+    traces:
+      - srd007-passthrough R3.1
+  - name: 'a backslash inside inline code or a code block is neither raw nor escaped by this path'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestBackslashInCodeIsCode
+    status: done
+    description: |
+      TestBackslashInCodeIsCode covers srd007-passthrough R3.2: a backslash
+      inside inline code or a code block is neither raw nor escaped by this
+      path.
+    traces:
+      - srd007-passthrough R3.2
+      - srd007-passthrough AC7
+  - name: 'a citation inside a raw block stays as written, and an image inside one does not become a float'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestRawBlockContentIsNotWalked
+    status: done
+    description: |
+      TestRawBlockContentIsNotWalked covers srd007-passthrough R1.5, R3.3, R4.2,
+      srd006-citations R4.4, and AC4: a citation inside a raw block stays as
+      written, and an image inside one does not become a float.
+    traces:
+      - srd006-citations R4.4
+      - srd007-passthrough R1.5
+      - srd007-passthrough R3.3
+      - srd007-passthrough R4.2
+      - srd007-passthrough AC4
+  - name: 'the content reaches the fragment unescaped, without the fence'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestRawBlockKeepsItsInfoStringOut
+    status: done
+    description: |
+      TestRawBlockKeepsItsInfoStringOut covers srd007-passthrough R1.1, R1.2,
+      and AC1: the content reaches the fragment unescaped, without the fence.
+    traces:
+      - srd007-passthrough R1.1
+      - srd007-passthrough R1.2
+  - name: 'the distinction is the info string alone'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestOtherInfoStringsAreVerbatim
+    status: done
+    description: |
+      TestOtherInfoStringsAreVerbatim covers srd007-passthrough R1.4 and AC6:
+      the distinction is the info string alone.
+    traces:
+      - srd007-passthrough R1.4
+      - srd007-passthrough AC6
+  - name: 'recognition is textual, so a command this library never heard of passes through and LaTeX is left to report it'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestUnknownCommandsAreNotChecked
+    status: done
+    description: |
+      TestUnknownCommandsAreNotChecked covers srd007-passthrough R3.5:
+      recognition is textual, so a command this library never heard of passes
+      through and LaTeX is left to report it.
+    traces:
+      - srd007-passthrough R3.5
+      - srd007-passthrough AC8
+  - name: 'srd007-passthrough R3.4'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestHardBreakIsNotAControlSequence
+    status: done
+    description: |
+      TestHardBreakIsNotAControlSequence covers srd007-passthrough R3.4.
+    traces:
+      - srd007-passthrough R3.4
+  - name: 'raw LaTeX carrying a float and a caption is not held to the float requirements, and reaches the fragment as the author w'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestRawLaTeXOwnsWhatItCarries
+    status: done
+    description: |
+      TestRawLaTeXOwnsWhatItCarries covers srd007-passthrough R4.4: raw LaTeX
+      carrying a float and a caption is not held to the float requirements, and
+      reaches the fragment as the author wrote it.
+    traces:
+      - srd007-passthrough R4.4
+  - name: 'srd002-renderer-core R3.1, R3.4, R3.5, and R3.7 with the example the SRD states'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestHeadingsRenderTheSRDExample
+    status: done
+    description: |
+      TestHeadingsRenderTheSRDExample covers srd002-renderer-core R3.1, R3.4,
+      R3.5, and R3.7 with the example the SRD states.
+    traces:
+      - srd002-renderer-core R3.1
+      - srd002-renderer-core R3.4
+      - srd002-renderer-core R3.5
+      - srd002-renderer-core R3.7
+      - srd002-renderer-core AC4
+      - srd002-renderer-core AC7
+  - name: 'srd002-renderer-core R3.1'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestHeadingLevelsMapToSectioningCommands
+    status: done
+    description: |
+      TestHeadingLevelsMapToSectioningCommands covers srd002-renderer-core R3.1.
+    traces:
+      - srd002-renderer-core R3.1
+  - name: 'srd002-renderer-core R3.2 and R1.3'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestDeepHeadingIsAnError
+    status: done
+    description: |
+      TestDeepHeadingIsAnError covers srd002-renderer-core R3.2 and R1.3.
+    traces:
+      - srd002-renderer-core R1.3
+      - srd002-renderer-core R3.2
+      - srd002-renderer-core AC3
+  - name: 'srd002-renderer-core R3.5 against the identifiers the tutorial''s chapters actually reference'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestDerivedSlugsMatchTheManuscriptReferences
+    status: done
+    description: |
+      TestDerivedSlugsMatchTheManuscriptReferences covers srd002-renderer-core
+      R3.5 against the identifiers the tutorial's chapters actually reference.
+    traces:
+      - srd002-renderer-core R3.5
+  - name: 'both headings are named, rather than the second taking a counter suffix'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestCollidingHeadingsAreAnError
+    status: done
+    description: |
+      TestCollidingHeadingsAreAnError covers srd002-renderer-core R3.6: both
+      headings are named, rather than the second taking a counter suffix.
+    traces:
+      - srd002-renderer-core R3.6
+  - name: 'an author names one of the two and the chapter converts'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestStatedIdentifierResolvesACollision
+    status: done
+    description: |
+      TestStatedIdentifierResolvesACollision covers srd002-renderer-core R3.4:
+      an author names one of the two and the chapter converts.
+    traces:
+      - srd002-renderer-core R3.4
+  - name: 'srd002-renderer-core R4.1, R4.2, and R4.3 with the example the SRD states'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestParagraphInlineRendering
+    status: done
+    description: |
+      TestParagraphInlineRendering covers srd002-renderer-core R4.1, R4.2, and
+      R4.3 with the example the SRD states.
+    traces:
+      - srd002-renderer-core R4.1
+      - srd002-renderer-core R4.2
+      - srd002-renderer-core R4.3
+      - srd002-renderer-core AC1
+  - name: 'srd002-renderer-core R4.2'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestStrongEmphasisRendersBold
+    status: done
+    description: |
+      TestStrongEmphasisRendersBold covers srd002-renderer-core R4.2.
+    traces:
+      - srd002-renderer-core R4.2
+  - name: 'a paragraph of specials comes out escaped, so no renderer writes text by another route'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestTextReachesTheBufferThroughTheEscaper
+    status: done
+    description: |
+      TestTextReachesTheBufferThroughTheEscaper covers srd002-renderer-core R4.1
+      and R6.2: a paragraph of specials comes out escaped, so no renderer writes
+      text by another route.
+    traces:
+      - srd002-renderer-core R4.1
+      - srd002-renderer-core R6.2
+      - srd002-renderer-core AC5
+  - name: 'a soft break keeps the source''s line structure, a hard break emits a LaTeX line break'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestLineBreaks
+    status: done
+    description: |
+      TestLineBreaks covers srd002-renderer-core R4.4: a soft break keeps the
+      source's line structure, a hard break emits a LaTeX line break.
+    traces:
+      - srd002-renderer-core R4.4
+      - srd002-renderer-core AC14
+  - name: 'srd002-renderer-core R4.5'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestLinks
+    status: done
+    description: |
+      TestLinks covers srd002-renderer-core R4.5.
+    traces:
+      - srd002-renderer-core R4.5
+      - srd002-renderer-core AC15
+  - name: 'srd002-renderer-core R5.1, R5.3, and R5.5 with the example the SRD states'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestListsAndQuotes
+    status: done
+    description: |
+      TestListsAndQuotes covers srd002-renderer-core R5.1, R5.3, and R5.5 with
+      the example the SRD states.
+    traces:
+      - srd002-renderer-core R5.1
+      - srd002-renderer-core R5.3
+      - srd002-renderer-core R5.5
+  - name: 'srd002-renderer-core R5.2'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestNestedListsNest
+    status: done
+    description: |
+      TestNestedListsNest covers srd002-renderer-core R5.2.
+    traces:
+      - srd002-renderer-core R5.2
+  - name: 'a fenced block whose info string is not a raw-LaTeX marker is verbatim, unescaped'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestCodeBlockRendersVerbatim
+    status: done
+    description: |
+      TestCodeBlockRendersVerbatim covers srd002-renderer-core R5.4: a fenced
+      block whose info string is not a raw-LaTeX marker is verbatim, unescaped.
+    traces:
+      - srd002-renderer-core R5.4
+  - name: 'srd002-renderer-core R5.4''s dispatch to the passthrough path and srd007-passthrough R1.1, R1.2, and R1.3'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestRawLaTeXBlockPassesThrough
+    status: done
+    description: |
+      TestRawLaTeXBlockPassesThrough covers srd002-renderer-core R5.4's dispatch
+      to the passthrough path and srd007-passthrough R1.1, R1.2, and R1.3.
+    traces:
+      - srd002-renderer-core R5.4
+      - srd007-passthrough R1.1
+      - srd007-passthrough R1.2
+      - srd007-passthrough R1.3
+      - srd007-passthrough AC1
+  - name: 'srd002-renderer-core R6.3, which is what keeps the manuscripts'' backlink comments out of the LaTeX'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestHTMLCommentsAreDropped
+    status: done
+    description: |
+      TestHTMLCommentsAreDropped covers srd002-renderer-core R6.3, which is what
+      keeps the manuscripts' backlink comments out of the LaTeX.
+    traces:
+      - srd002-renderer-core R6.3
+  - name: 'each names the construct and its line, and none is silently omitted'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestUnmappedConstructsAreErrors
+    status: done
+    description: |
+      TestUnmappedConstructsAreErrors covers srd002-renderer-core R6.4 and R1.3:
+      each names the construct and its line, and none is silently omitted.
+    traces:
+      - srd002-renderer-core R1.3
+      - srd002-renderer-core R6.4
+  - name: 'the core dispatches to the citation renderer and does not duplicate its output'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestCitationsRenderThroughTheExtension
+    status: done
+    description: |
+      TestCitationsRenderThroughTheExtension covers srd002-renderer-core R6.1
+      and srd006-citations R2.3: the core dispatches to the citation renderer
+      and does not duplicate its output.
+    traces:
+      - srd002-renderer-core R6.1
+      - srd006-citations R2.3
+      - srd002-renderer-core AC16
+  - name: 'the error names the key and the line, and no fragment comes back with it'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestUnknownCitationKeyFailsTheConversion
+    status: done
+    description: |
+      TestUnknownCitationKeyFailsTheConversion covers srd006-citations R3.1 and
+      srd002-renderer-core R1.3: the error names the key and the line, and no
+      fragment comes back with it.
+    traces:
+      - srd002-renderer-core R1.3
+      - srd006-citations R3.1
+  - name: 'srd002-renderer-core R1.4 and R1.5'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestFragmentShape
+    status: done
+    description: |
+      TestFragmentShape covers srd002-renderer-core R1.4 and R1.5.
+    traces:
+      - srd002-renderer-core R1.4
+      - srd002-renderer-core R1.5
+      - srd002-renderer-core AC11
+  - name: 'srd002-renderer-core R1.2'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestConversionIsDeterministic
+    status: done
+    description: |
+      TestConversionIsDeterministic covers srd002-renderer-core R1.2.
+    traces:
+      - srd002-renderer-core R1.2
+  - name: 'conversion holds no state between calls. Run with -race'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestConcurrentConversionsDoNotInterfere
+    status: done
+    description: |
+      TestConcurrentConversionsDoNotInterfere covers srd002-renderer-core R1.2:
+      conversion holds no state between calls. Run with -race.
+    traces:
+      - srd002-renderer-core R1.2
+  - name: 'a zero Config converts a chapter with no citations and no floats, and a citation renders because an absent key set turns'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestZeroConfigConverts
+    status: done
+    description: |
+      TestZeroConfigConverts covers srd002-renderer-core R2.3: a zero Config
+      converts a chapter with no citations and no floats, and a citation renders
+      because an absent key set turns validation off.
+    traces:
+      - srd002-renderer-core R2.3
+  - name: 'heading text escapes and renders inline constructs as a paragraph does'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestHeadingTextTakesInlineConstructs
+    status: done
+    description: |
+      TestHeadingTextTakesInlineConstructs covers srd002-renderer-core R3.3:
+      heading text escapes and renders inline constructs as a paragraph does.
+    traces:
+      - srd002-renderer-core R3.3
+      - srd002-renderer-core AC13
+  - name: 'a construct the mapping does not cover is an error, and the same content written as raw LaTeX converts, so an author pro'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestRawLaTeXIsTheRouteAroundTheMapping
+    status: done
+    description: |
+      TestRawLaTeXIsTheRouteAroundTheMapping covers srd002-renderer-core R6.5
+      and srd007-passthrough R4.3: a construct the mapping does not cover is an
+      error, and the same content written as raw LaTeX converts, so an author
+      proceeds without waiting for a mapping.
+    traces:
+      - srd002-renderer-core R6.5
+      - srd007-passthrough R4.3
+      - srd002-renderer-core AC17
+      - srd007-passthrough AC9

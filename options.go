@@ -6,7 +6,7 @@ import "github.com/petar-djukic/md-to-tex/internal/cite"
 //
 // It is a plain value holding no file paths to read and no callbacks: the
 // caller may keep it in its own configuration file, and this library reads
-// none (srd-2-renderer-core R2.1). The zero value converts a chapter that
+// none (srd002-renderer-core R2.1). The zero value converts a chapter that
 // carries no citations (R2.3).
 type Options struct {
 	// CitationKeys is the set of keys a citation may name, which the caller
@@ -14,7 +14,7 @@ type Options struct {
 	//
 	// A nil slice turns key validation off. A non-nil empty slice holds no
 	// valid key, so every citation fails against it. The two are
-	// distinguishable, which is what srd-6-citations R3.2 requires.
+	// distinguishable, which is what srd006-citations R3.2 requires.
 	CitationKeys []string
 }
 

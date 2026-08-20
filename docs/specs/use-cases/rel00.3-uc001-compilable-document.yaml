@@ -1,0 +1,96 @@
+# Copyright (c) 2026 Petar Djukic. All rights reserved. SPDX-License-Identifier: MIT
+
+id: rel00.3-uc001-compilable-document
+title: The Fragments Assemble Into a Document That Compiles
+
+summary: |
+  Chapter fragments do not compile on their own. The pipeline needs the title
+  page rendered into the front-matter fragment IEEEtran expects, and a
+  container document that declares the class, includes the preamble, inputs
+  the fragments in roster order, and closes with the bibliography.
+
+  The container holds nothing else, so regenerating it when a chapter joins
+  the roster cannot disturb a chapter, and the preamble an author has adjusted
+  survives because the container names that file rather than carrying its
+  contents.
+
+actor: The paper pipeline, assembling a build.
+
+trigger: |
+  The pipeline has converted every chapter and needs a document latexmk can
+  compile.
+
+preconditions:
+  - Every chapter fragment converted without error.
+  - The title page carries its metadata as YAML frontmatter with a title.
+  - The caller holds the chapter roster in order, and owns the preamble file and the bibliography.
+
+flow:
+  - id: F1
+    text: The pipeline renders the title page, whose metadata reaches the title, author, and abstract commands rather than becoming body text.
+  - id: F2
+    text: The abstract and whatever the page carries below it -- a keywords block, typically -- convert through the chapter path, so raw LaTeX in them survives.
+  - id: F3
+    text: The pipeline asks for the container document, passing the roster and its options.
+  - id: F4
+    text: The container declares the class, includes the preamble by name, sets the graphics path, inputs each chapter in roster order, and closes with the bibliography.
+  - id: F5
+    text: The pipeline compares the generated container against the one on disk and writes it only when the roster changed, so an author's preamble adjustment is never at risk.
+  - id: F6
+    text: Latexmk compiles the document.
+
+touchpoints:
+  - id: T1
+    target: srd001-front-matter R1 R2 R3 AC1 AC3 -- The title page decodes and renders into the title, author, and abstract blocks, with the author's address on its own line.
+    reason: Flow F1 is the metadata reaching the commands that expect it rather than arriving as prose under a heading.
+  - id: T2
+    target: srd001-front-matter R4 AC1 AC2 -- The abstract comes from either place the manuscripts put it, and the remaining body follows it converted rather than escaped.
+    reason: Flow F2 is why the front matter depends on the chapter path rather than duplicating it.
+  - id: T3
+    target: srd008-container R1 AC1 AC5 -- The container emits the class, preamble include, graphics path, and bibliography, and holds no content of its own.
+    reason: Flow F4 is the container's whole contents, and holding nothing else is what makes F5 safe.
+  - id: T4
+    target: srd008-container R2 AC1 AC2 AC3 -- The input list follows the roster one to one, with the front matter treated like any other chapter.
+    reason: Flow F4 is the input list, and the front matter not being special-cased is what keeps the mapping mechanical.
+  - id: T5
+    target: srd008-container R3 AC4 AC7 -- Generation is deterministic and writes nothing, so the caller decides when to replace the container, and the preamble survives.
+    reason: Flow F5 is that comparison, which only works because the same roster produces the same bytes.
+
+success_criteria:
+  - id: S1
+    criterion: A title page whose abstract is a frontmatter field and whose body is a raw-LaTeX keywords block renders the abstract environment before the keywords, with the keywords unescaped.
+    traces:
+      - srd001-front-matter R1.6
+      - srd001-front-matter R4.1
+      - srd001-front-matter R4.3
+      - srd001-front-matter AC1
+  - id: S2
+    criterion: An author written with a mailto link renders as the escaped name and a monospace address, with no bracket syntax surviving.
+    traces:
+      - srd001-front-matter R3.1
+      - srd001-front-matter AC3
+  - id: S3
+    criterion: A three-chapter roster produces the container in the order the roster states, one input line per chapter with no extension on any argument.
+    traces:
+      - srd008-container R1.1
+      - srd008-container R2.1
+      - srd008-container AC1
+  - id: S4
+    criterion: Generating twice from the same roster yields byte-identical output, and the generator writes no file.
+    traces:
+      - srd008-container R3.1
+      - srd008-container R3.2
+      - srd008-container AC4
+  - id: S5
+    criterion: The document compiles under latexmk from the fragments, the container, and the caller's preamble and bibliography.
+    traces:
+      - srd008-container R1.5
+      - srd008-container AC6
+
+out_of_scope:
+  - Compiling, which stays with the calling pipeline.
+  - Generating or editing the preamble, which is the author's.
+  - Generating the bibliography file, which the caller builds from its corpus.
+
+test_suite_trace: test-rel00.3-document-shell
+status: planned

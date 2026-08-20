@@ -1,253 +1,107 @@
 package specs
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
-// layout is a documentation layer written into a temporary directory: one
-// architecture file, the SRDs it points at, and the roadmap that schedules
-// them. Cases mutate it to produce the state under test.
-type layout struct {
-	architecture string
-	roadMap      string
-	srds         map[string]string
-	tests        map[string]string
-}
+const roadMapHeader = "releases:\n"
 
-const validArchitecture = `id: architecture-test
-title: Test Architecture
-components:
-  - name: Escaper
-    srd: docs/srd/srd-1-escaping.yaml
-interfaces:
-  - name: Conversion
-    srd: docs/srd/srd-1-escaping.yaml
-`
-
-const validRoadMap = `releases:
-  - id: rel00.1
-    units:
-      - srd-1-escaping
-`
-
-const validSRD = `id: srd-1-escaping
-title: Escaper
-requirements:
-  R1:
-    title: The escaped characters
-    items:
-      - R1.1: The escaper must replace the ten LaTeX special characters.
-      - R1.2: The escaper must pass Unicode through untouched.
-acceptance_criteria:
-  - id: AC1
-    criterion: A string of specials escapes and nothing else changes.
-    traces: [R1.1, R1.2]
-`
-
-func write(t *testing.T, l layout) string {
+// layout writes a repository whose corpus holds the named SRDs, whose
+// architecture points at each of them, and whose road map assigns units as
+// given. Cases override the architecture where that edge is what they test.
+func layout(t *testing.T, srds []string, releases map[string][]string, order []string) string {
 	t.Helper()
 	root := t.TempDir()
-	docs := filepath.Join(root, "docs")
-	if err := os.MkdirAll(filepath.Join(docs, "srd"), 0o755); err != nil {
+	corpus := filepath.Join(root, "docs", "specs", "software-requirements")
+	if err := os.MkdirAll(corpus, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	writeFile(t, filepath.Join(docs, "VISION.yaml"), "id: vision-test\ntitle: Test Vision\n")
-	writeFile(t, filepath.Join(docs, "ARCHITECTURE.yaml"), l.architecture)
-	writeFile(t, filepath.Join(docs, "road-map.yaml"), l.roadMap)
-	for name, body := range l.srds {
-		writeFile(t, filepath.Join(docs, "srd", name), body)
+	for _, name := range srds {
+		write(t, filepath.Join(corpus, name+".yaml"), "id: "+name+"\ntitle: A Document\n")
 	}
-	for name, body := range l.tests {
-		path := filepath.Join(root, name)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatal(err)
+	write(t, filepath.Join(root, "docs", "ARCHITECTURE.yaml"), architectureFor(srds))
+
+	body := roadMapHeader
+	for _, id := range order {
+		body += "  - id: " + id + "\n    version: \"" + strings.TrimPrefix(id, "rel") + "\"\n    units:\n"
+		for _, unit := range releases[id] {
+			body += "      - " + unit + "\n"
 		}
-		writeFile(t, path, body)
 	}
+	write(t, filepath.Join(root, "docs", "road-map.yaml"), body)
 	return root
 }
 
-func writeFile(t *testing.T, path, body string) {
+// architectureFor names every SRD from a component, which is the clean state
+// of the edge.
+func architectureFor(srds []string) string {
+	body := "id: architecture-test\ntitle: Test Architecture\ncomponents:\n"
+	for i, name := range srds {
+		body += fmt.Sprintf("  - name: Component %d\n    srd: docs/specs/software-requirements/%s.yaml\n", i+1, name)
+	}
+	return body
+}
+
+func write(t *testing.T, path, body string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func valid() layout {
-	return layout{
-		architecture: validArchitecture,
-		roadMap:      validRoadMap,
-		srds:         map[string]string{"srd-1-escaping.yaml": validSRD},
-	}
-}
-
-func TestCheckReportsLayerProblems(t *testing.T) {
+// TestCheckWalksTheReleaseEdge covers both directions of the edge the shared
+// corpus format has no place for.
+func TestCheckWalksTheReleaseEdge(t *testing.T) {
 	cases := []struct {
-		name  string
-		build func() layout
-		want  string
+		name     string
+		srds     []string
+		releases map[string][]string
+		order    []string
+		want     string
 	}{
 		{
-			name:  "clean layer",
-			build: valid,
-			want:  "",
+			name:     "every document owned by exactly one release",
+			srds:     []string{"srd001-alpha", "srd002-beta"},
+			releases: map[string][]string{"rel00.1": {"srd001-alpha"}, "rel00.2": {"srd002-beta"}},
+			order:    []string{"rel00.1", "rel00.2"},
 		},
 		{
-			name: "dangling pointer",
-			build: func() layout {
-				l := valid()
-				l.architecture = strings.Replace(l.architecture,
-					"srd: docs/srd/srd-1-escaping.yaml\ninterfaces",
-					"srd: docs/srd/srd-2-absent.yaml\ninterfaces", 1)
-				return l
-			},
-			want: "srd-2-absent.yaml is named by Escaper but does not exist",
+			name:     "a unit naming no document on disk",
+			srds:     []string{"srd001-alpha"},
+			releases: map[string][]string{"rel00.1": {"srd001-alpha", "srd009-absent"}},
+			order:    []string{"rel00.1"},
+			want:     "release rel00.1 names srd009-absent, which is not an SRD on disk",
 		},
 		{
-			name: "orphan specification",
-			build: func() layout {
-				l := valid()
-				l.srds["srd-9-unclaimed.yaml"] = strings.Replace(validSRD,
-					"id: srd-1-escaping", "id: srd-9-unclaimed", 1)
-				return l
-			},
-			want: "no component or interface in ARCHITECTURE.yaml names this file",
+			name:     "a document no release claims",
+			srds:     []string{"srd001-alpha", "srd002-beta"},
+			releases: map[string][]string{"rel00.1": {"srd001-alpha"}},
+			order:    []string{"rel00.1"},
+			want:     "srd002-beta is assigned to no release",
 		},
 		{
-			name: "duplicate mapping key",
-			build: func() layout {
-				l := valid()
-				l.srds["srd-1-escaping.yaml"] = validSRD + "title: Escaper again\n"
-				return l
-			},
-			want: `mapping key "title" already defined`,
-		},
-		{
-			name: "duplicate key in the architecture",
-			build: func() layout {
-				l := valid()
-				l.architecture += "title: Test Architecture again\n"
-				return l
-			},
-			want: `mapping key "title" already defined`,
-		},
-		{
-			name: "component with no pointer",
-			build: func() layout {
-				l := valid()
-				l.architecture = strings.Replace(l.architecture,
-					"  - name: Escaper\n    srd: docs/srd/srd-1-escaping.yaml\n",
-					"  - name: Escaper\n    srd: docs/srd/srd-1-escaping.yaml\n  - name: Tables\n", 1)
-				return l
-			},
-			want: `component "Tables" names no srd`,
-		},
-		{
-			name: "id disagrees with the file name",
-			build: func() layout {
-				l := valid()
-				l.srds["srd-1-escaping.yaml"] = strings.Replace(validSRD,
-					"id: srd-1-escaping", "id: srd-1-escapes", 1)
-				return l
-			},
-			want: `id "srd-1-escapes" does not match the file name`,
-		},
-		{
-			name: "criterion traces to a requirement that does not exist",
-			build: func() layout {
-				l := valid()
-				l.srds["srd-1-escaping.yaml"] = strings.Replace(validSRD,
-					"traces: [R1.1, R1.2]", "traces: [R1.1, R4.7]", 1)
-				return l
-			},
-			want: "criterion AC1 traces to R4.7, which is not a requirement here",
-		},
-		{
-			name: "test names several requirements of one specification",
-			build: func() layout {
-				l := valid()
-				l.tests = map[string]string{
-					"convert_test.go": "package convert\n\n// Covers srd-1-escaping R1.1, R1.2, and R9.9.\nfunc TestNothing() {}\n",
-				}
-				return l
-			},
-			want: "names srd-1-escaping R9.9, which is not a requirement in the docs layer",
-		},
-		{
-			name: "requirement ids wrapped across comment lines still count",
-			build: func() layout {
-				l := valid()
-				l.tests = map[string]string{
-					"convert_test.go": "package convert\n\n// Covers srd-1-escaping R1.1, R1.2, and\n// R9.9 across two lines.\nfunc TestNothing() {}\n",
-				}
-				return l
-			},
-			want: "names srd-1-escaping R9.9, which is not a requirement in the docs layer",
-		},
-		{
-			name: "test names a requirement that does not exist",
-			build: func() layout {
-				l := valid()
-				l.tests = map[string]string{
-					"convert_test.go": "package convert\n\n// srd-1-escaping R8.3 is not a requirement.\nfunc TestNothing() {}\n",
-				}
-				return l
-			},
-			want: "names srd-1-escaping R8.3, which is not a requirement in the docs layer",
-		},
-		{
-			name: "release schedules a specification nobody wrote",
-			build: func() layout {
-				l := valid()
-				l.roadMap = strings.Replace(l.roadMap,
-					"- srd-1-escaping", "- srd-1-escaping\n      - srd-2-absent", 1)
-				return l
-			},
-			want: "release rel00.1 names srd-2-absent, which is not an SRD on disk",
-		},
-		{
-			name: "specification no release schedules",
-			build: func() layout {
-				l := valid()
-				l.roadMap = "releases:\n  - id: rel00.1\n    units: []\n"
-				return l
-			},
-			want: "srd-1-escaping is assigned to no release",
-		},
-		{
-			name: "specification scheduled twice",
-			build: func() layout {
-				l := valid()
-				l.roadMap += "  - id: rel00.2\n    units:\n      - srd-1-escaping\n"
-				return l
-			},
-			want: "srd-1-escaping is assigned to rel00.1 and rel00.2; exactly one release owns an SRD",
-		},
-		{
-			name: "duplicate key in the roadmap",
-			build: func() layout {
-				l := valid()
-				l.roadMap += "releases: []\n"
-				return l
-			},
-			want: `mapping key "releases" already defined`,
+			name:     "a document two releases claim",
+			srds:     []string{"srd001-alpha"},
+			releases: map[string][]string{"rel00.1": {"srd001-alpha"}, "rel00.2": {"srd001-alpha"}},
+			order:    []string{"rel00.1", "rel00.2"},
+			want:     "srd001-alpha is assigned to rel00.1 and rel00.2",
 		},
 	}
 
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
-			report, err := Check(write(t, testCase.build()))
+			report, err := Check(layout(t, testCase.srds, testCase.releases, testCase.order))
 			if err != nil {
 				t.Fatalf("Check() error: %v", err)
 			}
 			problems := report.Err()
 			if testCase.want == "" {
 				if problems != nil {
-					t.Fatalf("clean layer reported:\n%v", problems)
+					t.Fatalf("a clean road map reported:\n%v", problems)
 				}
 				return
 			}
@@ -261,41 +115,117 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 	}
 }
 
-// Coverage is a report rather than a gate: a requirement no test names is
-// counted, and one a test does name is credited.
-func TestCoverageCountsWithoutFailing(t *testing.T) {
-	l := valid()
-	l.tests = map[string]string{
-		"convert_test.go": "package convert\n\n// Covers srd-1-escaping R1.1.\nfunc TestEscape() {}\n",
+// TestCheckWalksTheArchitectureEdge covers the edge the specification-critic
+// does not read: ARCHITECTURE.yaml is this repository's own document, and a
+// critic run passes with a pointer resolving to nothing.
+func TestCheckWalksTheArchitectureEdge(t *testing.T) {
+	cases := []struct {
+		name         string
+		architecture string
+		want         string
+	}{
+		{
+			name: "a pointer naming no file",
+			architecture: "id: architecture-test\ntitle: Test Architecture\ncomponents:\n" +
+				"  - name: Tables\n    srd: docs/specs/software-requirements/srd909-absent.yaml\n",
+			want: `component "Tables" names docs/specs/software-requirements/srd909-absent.yaml, which does not exist`,
+		},
+		{
+			name:         "a component naming no requirement document",
+			architecture: "id: architecture-test\ntitle: Test Architecture\ncomponents:\n  - name: Tables\n",
+			want:         `component "Tables" names no srd`,
+		},
+		{
+			name: "a document no component claims",
+			architecture: "id: architecture-test\ntitle: Test Architecture\ncomponents:\n" +
+				"  - name: Alpha\n    srd: docs/specs/software-requirements/srd001-alpha.yaml\n",
+			want: "no component or interface in ARCHITECTURE.yaml names this file",
+		},
+		{
+			name: "a duplicate mapping key",
+			architecture: "id: architecture-test\ntitle: Test Architecture\ntitle: Again\ncomponents:\n" +
+				"  - name: Alpha\n    srd: docs/specs/software-requirements/srd001-alpha.yaml\n",
+			want: `mapping key "title" already defined`,
+		},
 	}
-	report, err := Check(write(t, l))
-	if err != nil {
-		t.Fatalf("Check() error: %v", err)
-	}
-	if problems := report.Err(); problems != nil {
-		t.Fatalf("coverage should not fail the run:\n%v", problems)
-	}
-	if report.Requirements != 2 {
-		t.Errorf("Requirements = %d, want 2", report.Requirements)
-	}
-	if report.Covered != 1 {
-		t.Errorf("Covered = %d, want 1", report.Covered)
-	}
-	if len(report.Uncovered) != 1 || report.Uncovered[0] != "srd-1-escaping R1.2" {
-		t.Errorf("Uncovered = %v, want [srd-1-escaping R1.2]", report.Uncovered)
-	}
-	if !strings.Contains(report.Summary(), "1 of 2 requirements") {
-		t.Errorf("summary does not carry the coverage line:\n%s", report.Summary())
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			root := layout(t,
+				[]string{"srd001-alpha", "srd002-beta"},
+				map[string][]string{"rel00.1": {"srd001-alpha", "srd002-beta"}},
+				[]string{"rel00.1"})
+			write(t, filepath.Join(root, "docs", "ARCHITECTURE.yaml"), testCase.architecture)
+
+			report, err := Check(root)
+			if err != nil {
+				t.Fatalf("Check() error: %v", err)
+			}
+			problems := report.Err()
+			if problems == nil {
+				t.Fatalf("no finding reported; wanted one naming %q", testCase.want)
+			}
+			if !strings.Contains(problems.Error(), testCase.want) {
+				t.Errorf("findings do not name %q:\n%v", testCase.want, problems)
+			}
+		})
 	}
 }
 
-// TestDocsLayer is the check running against this repository, which is what
-// mage audit dispatches to and what CI runs.
-func TestDocsLayer(t *testing.T) {
+// TestCheckCountsWhatItRead covers the summary a human reads.
+func TestCheckCountsWhatItRead(t *testing.T) {
+	root := layout(t,
+		[]string{"srd001-alpha", "srd002-beta"},
+		map[string][]string{"rel00.1": {"srd001-alpha", "srd002-beta"}},
+		[]string{"rel00.1"})
+
+	report, err := Check(root)
+	if err != nil {
+		t.Fatalf("Check() error: %v", err)
+	}
+	if report.SRDFiles != 2 || report.Releases != 1 || report.Pointers != 2 {
+		t.Errorf("SRDFiles = %d, Releases = %d, Pointers = %d, want 2, 1, and 2",
+			report.SRDFiles, report.Releases, report.Pointers)
+	}
+	if !strings.Contains(report.Summary(), "1 releases over 2 requirement documents") {
+		t.Errorf("Summary() = %q", report.Summary())
+	}
+}
+
+// TestCheckReportsAnUnreadableRoadMap covers the path where the file is absent
+// or malformed: a finding, not a panic.
+func TestCheckReportsAnUnreadableRoadMap(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "docs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	report, err := Check(root)
+	if err != nil {
+		t.Fatalf("Check() error: %v", err)
+	}
+	if report.Err() == nil {
+		t.Error("a missing road map should be reported")
+	}
+
+	write(t, filepath.Join(root, "docs", "road-map.yaml"), "releases: [oops\n")
+	report, err = Check(root)
+	if err != nil {
+		t.Fatalf("Check() error: %v", err)
+	}
+	if report.Err() == nil {
+		t.Error("a malformed road map should be reported")
+	}
+}
+
+// TestCheckReadsTheRealRoadMap runs the check against this repository, which
+// is what mage audit dispatches to.
+func TestCheckReadsTheRealRoadMap(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("..", ".."))
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	report, err := Check(root)
 	if err != nil {
 		t.Fatalf("Check() error: %v", err)
@@ -303,5 +233,5 @@ func TestDocsLayer(t *testing.T) {
 	if problems := report.Err(); problems != nil {
 		t.Fatal(problems)
 	}
-	t.Log("\n" + report.Summary())
+	t.Log(report.Summary())
 }

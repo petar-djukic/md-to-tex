@@ -32,7 +32,7 @@ func (w *walker) inlineString(node ast.Node) (string, error) {
 }
 
 // inline dispatches one inline node. Text reaches the builder through the
-// escaper, and raw content declares itself (srd-2-renderer-core R6.2).
+// escaper, and raw content declares itself (srd002-renderer-core R6.2).
 func (w *walker) inline(builder *strings.Builder, node ast.Node) error {
 	switch typed := node.(type) {
 	case *ast.Text:
@@ -55,18 +55,18 @@ func (w *walker) inline(builder *strings.Builder, node ast.Node) error {
 	case *ast.RawHTML:
 		return w.rawHTML(typed)
 	case *ast.Image:
-		return w.fail(w.offsetOf(typed), "image", "figures render from rel00.2 (srd-4-figures)")
+		return w.fail(w.offsetOf(typed), "image", "figures render from rel00.2 (srd004-figures)")
 	}
 	return w.fail(w.offsetOf(node), node.Kind().String(), "no mapping for this construct")
 }
 
 // text renders a text node - escaping its prose, passing raw LaTeX through -
-// and carries its line breaks (srd-2-renderer-core R4.1, R4.4).
+// and carries its line breaks (srd002-renderer-core R4.1, R4.4).
 func (w *walker) text(builder *strings.Builder, node *ast.Text) error {
 	start, stop := node.Segment.Start, node.Segment.Stop
 	if w.rawUntil > start {
 		// A control sequence in an earlier node reached into this one and was
-		// written whole (srd-7-passthrough R2.1).
+		// written whole (srd007-passthrough R2.1).
 		if w.rawUntil >= stop {
 			w.writeLineBreak(builder, node)
 			return nil
@@ -82,7 +82,7 @@ func (w *walker) text(builder *strings.Builder, node *ast.Text) error {
 	return nil
 }
 
-// writeLineBreak carries a text node's line break (srd-2-renderer-core R4.4).
+// writeLineBreak carries a text node's line break (srd002-renderer-core R4.4).
 func (w *walker) writeLineBreak(builder *strings.Builder, node *ast.Text) {
 	switch {
 	case node.HardLineBreak():
@@ -109,7 +109,7 @@ func (w *walker) blockEnd(node ast.Node) int {
 }
 
 // emphasis renders emphasis and strong emphasis over their rendered content
-// (srd-2-renderer-core R4.2).
+// (srd002-renderer-core R4.2).
 func (w *walker) emphasis(builder *strings.Builder, node *ast.Emphasis) error {
 	content, err := w.inlineString(node)
 	if err != nil {
@@ -124,7 +124,7 @@ func (w *walker) emphasis(builder *strings.Builder, node *ast.Emphasis) error {
 }
 
 // link renders a url command when the text equals the target and an href
-// command otherwise (srd-2-renderer-core R4.5).
+// command otherwise (srd002-renderer-core R4.5).
 func (w *walker) link(builder *strings.Builder, node *ast.Link) error {
 	target := string(node.Destination)
 	content, err := w.inlineString(node)
@@ -140,7 +140,7 @@ func (w *walker) link(builder *strings.Builder, node *ast.Link) error {
 }
 
 // citation validates the keys against the caller's set and renders the cite
-// command (srd-6-citations R2.1, R3.1).
+// command (srd006-citations R2.1, R3.1).
 func (w *walker) citation(builder *strings.Builder, node *cite.Node) error {
 	if err := cite.Validate(node, w.config.Citations); err != nil {
 		var unknown *cite.UnknownKeyError
@@ -153,7 +153,7 @@ func (w *walker) citation(builder *strings.Builder, node *cite.Node) error {
 }
 
 // rawHTML drops a comment and reports anything else
-// (srd-2-renderer-core R6.3).
+// (srd002-renderer-core R6.3).
 func (w *walker) rawHTML(node *ast.RawHTML) error {
 	if node.Segments.Len() > 0 {
 		segment := node.Segments.At(0)

@@ -1,0 +1,85 @@
+# Copyright (c) 2026 Petar Djukic. All rights reserved. SPDX-License-Identifier: MIT
+
+id: rel00.1-uc002-cross-chapter-label-collisions
+title: A Pipeline Finds the Identifiers Two Chapters Both Claim
+
+summary: |
+  Conversion is per chapter and sees no other chapter, so two chapters that
+  open with headings deriving the same slug each emit the same label. LaTeX
+  reports that as a duplicate label pointing at whichever chapter the container
+  inputs second, naming neither the chapter that caused it nor the heading
+  behind it.
+
+  The pipeline converts its chapters, holds the results, and asks the library
+  which identifiers more than one of them claims. It gets the chapters and the
+  headings, before anything is compiled.
+
+actor: The paper pipeline, after converting a roster of chapters.
+
+trigger: |
+  The pipeline finishes converting the chapters for a build and prepares to
+  assemble the container document.
+
+preconditions:
+  - Every chapter converted without error, so each carries a label report.
+  - The results are held in memory; nothing has been written to disk.
+
+flow:
+  - id: F1
+    text: Each conversion returns its fragment together with the labels it carries, each label naming its heading and whether the author stated the identifier.
+  - id: F2
+    text: The pipeline collects the results of every chapter in the roster.
+  - id: F3
+    text: The pipeline calls the collision check over those results.
+  - id: F4
+    text: The check returns every identifier appearing in more than one chapter, naming each chapter that carries it and the heading behind it.
+  - id: F5
+    text: The pipeline reports the collisions to the author, who renames a heading or states an identifier, and neither the library nor the check rewrites anything.
+
+touchpoints:
+  - id: T1
+    target: srd002-renderer-core R7.1 R7.2 -- Conversion reports the labels a fragment carries with their headings and origin, and a failed conversion reports none.
+    reason: Flow F1 is the report this use case reads, and its absence on failure is why F2 collects only successful results.
+  - id: T2
+    target: srd002-renderer-core R7.3 R7.4 AC8 AC9 -- The check is a function over reports that names every chapter and heading behind a shared identifier, and reads nothing.
+    reason: Flow F3 and F4 are the check itself, called on results held in memory.
+  - id: T3
+    target: srd002-renderer-core R7.5 R7.6 -- Stated and derived identifiers collide alike, and the check returns collisions rather than failing.
+    reason: Flow F5 leaves the decision with the author, which is what returning rather than failing makes possible.
+  - id: T4
+    target: srd002-renderer-core R7.7 AC10 -- No chapter stem is prefixed to a derived label.
+    reason: Prefixing would resolve the collision and break every cross-chapter reference, since a raw reference command passes through untouched.
+  - id: T5
+    target: srd002-renderer-core R3.6 -- A collision inside one chapter is an error at conversion time naming both headings.
+    reason: The precondition that every chapter converted is what leaves only cross-chapter collisions for this use case to find.
+
+success_criteria:
+  - id: S1
+    criterion: Two chapters whose headings derive the same identifier are reported as one collision naming both chapters and the heading behind each.
+    traces:
+      - srd002-renderer-core R7.3
+      - srd002-renderer-core AC8
+  - id: S2
+    criterion: The check runs over reports held in memory, opens no file, and returns collisions rather than an error.
+    traces:
+      - srd002-renderer-core R7.4
+      - srd002-renderer-core R7.6
+      - srd002-renderer-core AC9
+  - id: S3
+    criterion: An identifier two chapters both state is reported exactly as two derived ones are.
+    traces:
+      - srd002-renderer-core R7.5
+      - srd002-renderer-core AC8
+  - id: S4
+    criterion: A chapter's labels are byte-identical whether it converts alone or beside another chapter claiming the same slug.
+    traces:
+      - srd002-renderer-core R7.7
+      - srd002-renderer-core AC10
+
+out_of_scope:
+  - Resolving a collision. Renaming a heading or stating an identifier is an author's edit.
+  - Collisions inside one chapter, which conversion already reports.
+  - Reading fragments from disk, which the check never does.
+
+test_suite_trace: test-rel00.1-text-core
+status: specified

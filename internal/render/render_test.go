@@ -29,7 +29,7 @@ func convertError(t *testing.T, source string) *Error {
 	return failure
 }
 
-// TestHeadingsRenderTheSRDExample covers srd-2-renderer-core R3.1, R3.4, R3.5,
+// TestHeadingsRenderTheSRDExample covers srd002-renderer-core R3.1, R3.4, R3.5,
 // and R3.7 with the example the SRD states.
 func TestHeadingsRenderTheSRDExample(t *testing.T) {
 	const source = "# The Conversion Pipeline {#sec:pipeline}\n\n## Escaping\n"
@@ -41,7 +41,7 @@ func TestHeadingsRenderTheSRDExample(t *testing.T) {
 	}
 }
 
-// TestHeadingLevelsMapToSectioningCommands covers srd-2-renderer-core R3.1.
+// TestHeadingLevelsMapToSectioningCommands covers srd002-renderer-core R3.1.
 func TestHeadingLevelsMapToSectioningCommands(t *testing.T) {
 	cases := []struct {
 		source string
@@ -60,7 +60,7 @@ func TestHeadingLevelsMapToSectioningCommands(t *testing.T) {
 	}
 }
 
-// TestDeepHeadingIsAnError covers srd-2-renderer-core R3.2 and R1.3.
+// TestDeepHeadingIsAnError covers srd002-renderer-core R3.2 and R1.3.
 func TestDeepHeadingIsAnError(t *testing.T) {
 	failure := convertError(t, "# One\n\n##### Five\n")
 
@@ -75,7 +75,7 @@ func TestDeepHeadingIsAnError(t *testing.T) {
 	}
 }
 
-// TestDerivedSlugsMatchTheManuscriptReferences covers srd-2-renderer-core R3.5
+// TestDerivedSlugsMatchTheManuscriptReferences covers srd002-renderer-core R3.5
 // against the identifiers the tutorial's chapters actually reference.
 func TestDerivedSlugsMatchTheManuscriptReferences(t *testing.T) {
 	cases := []struct {
@@ -101,7 +101,7 @@ func TestDerivedSlugsMatchTheManuscriptReferences(t *testing.T) {
 	}
 }
 
-// TestCollidingHeadingsAreAnError covers srd-2-renderer-core R3.6: both
+// TestCollidingHeadingsAreAnError covers srd002-renderer-core R3.6: both
 // headings are named, rather than the second taking a counter suffix.
 func TestCollidingHeadingsAreAnError(t *testing.T) {
 	failure := convertError(t, "# Level mechanics\n\nProse.\n\n## Level mechanics\n")
@@ -114,7 +114,7 @@ func TestCollidingHeadingsAreAnError(t *testing.T) {
 	}
 }
 
-// TestStatedIdentifierResolvesACollision covers srd-2-renderer-core R3.4: an
+// TestStatedIdentifierResolvesACollision covers srd002-renderer-core R3.4: an
 // author names one of the two and the chapter converts.
 func TestStatedIdentifierResolvesACollision(t *testing.T) {
 	const source = "# Level mechanics\n\nProse.\n\n## Level mechanics {#sec:level-mechanics-detail}\n"
@@ -128,7 +128,7 @@ func TestStatedIdentifierResolvesACollision(t *testing.T) {
 	}
 }
 
-// TestParagraphInlineRendering covers srd-2-renderer-core R4.1, R4.2, and R4.3
+// TestParagraphInlineRendering covers srd002-renderer-core R4.1, R4.2, and R4.3
 // with the example the SRD states.
 func TestParagraphInlineRendering(t *testing.T) {
 	const source = "The *escaper* handles the ten `special` characters.\n"
@@ -139,14 +139,14 @@ func TestParagraphInlineRendering(t *testing.T) {
 	}
 }
 
-// TestStrongEmphasisRendersBold covers srd-2-renderer-core R4.2.
+// TestStrongEmphasisRendersBold covers srd002-renderer-core R4.2.
 func TestStrongEmphasisRendersBold(t *testing.T) {
 	if got := convert(t, "A **bold** claim.\n"); got != "A \\textbf{bold} claim.\n" {
 		t.Errorf("Convert() = %q", got)
 	}
 }
 
-// TestTextReachesTheBufferThroughTheEscaper covers srd-2-renderer-core R4.1
+// TestTextReachesTheBufferThroughTheEscaper covers srd002-renderer-core R4.1
 // and R6.2: a paragraph of specials comes out escaped, so no renderer writes
 // text by another route.
 func TestTextReachesTheBufferThroughTheEscaper(t *testing.T) {
@@ -158,7 +158,7 @@ func TestTextReachesTheBufferThroughTheEscaper(t *testing.T) {
 	}
 }
 
-// TestLineBreaks covers srd-2-renderer-core R4.4: a soft break keeps the
+// TestLineBreaks covers srd002-renderer-core R4.4: a soft break keeps the
 // source's line structure, a hard break emits a LaTeX line break.
 func TestLineBreaks(t *testing.T) {
 	if got := convert(t, "first line\nsecond line\n"); got != "first line\nsecond line\n" {
@@ -169,7 +169,7 @@ func TestLineBreaks(t *testing.T) {
 	}
 }
 
-// TestLinks covers srd-2-renderer-core R4.5.
+// TestLinks covers srd002-renderer-core R4.5.
 func TestLinks(t *testing.T) {
 	cases := []struct {
 		source string
@@ -192,7 +192,7 @@ func TestLinks(t *testing.T) {
 	}
 }
 
-// TestListsAndQuotes covers srd-2-renderer-core R5.1, R5.3, and R5.5 with the
+// TestListsAndQuotes covers srd002-renderer-core R5.1, R5.3, and R5.5 with the
 // example the SRD states.
 func TestListsAndQuotes(t *testing.T) {
 	const source = "- forward conversion\n- backport\n"
@@ -213,7 +213,7 @@ func TestListsAndQuotes(t *testing.T) {
 	}
 }
 
-// TestNestedListsNest covers srd-2-renderer-core R5.2.
+// TestNestedListsNest covers srd002-renderer-core R5.2.
 func TestNestedListsNest(t *testing.T) {
 	got := convert(t, "- outer\n    - inner\n")
 
@@ -222,7 +222,7 @@ func TestNestedListsNest(t *testing.T) {
 	}
 }
 
-// TestCodeBlockRendersVerbatim covers srd-2-renderer-core R5.4: a fenced block
+// TestCodeBlockRendersVerbatim covers srd002-renderer-core R5.4: a fenced block
 // whose info string is not a raw-LaTeX marker is verbatim, unescaped.
 func TestCodeBlockRendersVerbatim(t *testing.T) {
 	const source = "```go\nif x > 0 && y_1 < 100% {\n}\n```\n"
@@ -233,8 +233,8 @@ func TestCodeBlockRendersVerbatim(t *testing.T) {
 	}
 }
 
-// TestRawLaTeXBlockPassesThrough covers srd-2-renderer-core R5.4's dispatch to
-// the passthrough path and srd-7-passthrough R1.1, R1.2, and R1.3.
+// TestRawLaTeXBlockPassesThrough covers srd002-renderer-core R5.4's dispatch to
+// the passthrough path and srd007-passthrough R1.1, R1.2, and R1.3.
 func TestRawLaTeXBlockPassesThrough(t *testing.T) {
 	const source = "```{=latex}\n\\begin{IEEEkeywords}\nAutogenic systems, LLM agents.\n\\end{IEEEkeywords}\n```\n"
 	const want = "\\begin{IEEEkeywords}\nAutogenic systems, LLM agents.\n\\end{IEEEkeywords}\n"
@@ -248,10 +248,10 @@ func TestRawLaTeXBlockPassesThrough(t *testing.T) {
 	}
 }
 
-// TestHTMLCommentsAreDropped covers srd-2-renderer-core R6.3, which is what
+// TestHTMLCommentsAreDropped covers srd002-renderer-core R6.3, which is what
 // keeps the manuscripts' backlink comments out of the LaTeX.
 func TestHTMLCommentsAreDropped(t *testing.T) {
-	const source = "# Introduction\n\n<!-- S1 -- governed by docs/srd/srd-1.yaml -->\n\nProse.\n"
+	const source = "# Introduction\n\n<!-- S1 -- governed by docs/specs/software-requirements/srd-1.yaml -->\n\nProse.\n"
 
 	got := convert(t, source)
 	if strings.Contains(got, "governed by") || strings.Contains(got, "<!--") {
@@ -262,7 +262,7 @@ func TestHTMLCommentsAreDropped(t *testing.T) {
 	}
 }
 
-// TestUnmappedConstructsAreErrors covers srd-2-renderer-core R6.4 and R1.3:
+// TestUnmappedConstructsAreErrors covers srd002-renderer-core R6.4 and R1.3:
 // each names the construct and its line, and none is silently omitted.
 func TestUnmappedConstructsAreErrors(t *testing.T) {
 	cases := []struct {
@@ -295,8 +295,8 @@ func TestUnmappedConstructsAreErrors(t *testing.T) {
 	}
 }
 
-// TestCitationsRenderThroughTheExtension covers srd-2-renderer-core R6.1 and
-// srd-6-citations R2.3: the core dispatches to the citation renderer and does
+// TestCitationsRenderThroughTheExtension covers srd002-renderer-core R6.1 and
+// srd006-citations R2.3: the core dispatches to the citation renderer and does
 // not duplicate its output.
 func TestCitationsRenderThroughTheExtension(t *testing.T) {
 	const source = "Converge [@du-2023; @alam-2024] and see [@zhang-2025b].\n"
@@ -307,8 +307,8 @@ func TestCitationsRenderThroughTheExtension(t *testing.T) {
 	}
 }
 
-// TestUnknownCitationKeyFailsTheConversion covers srd-6-citations R3.1 and
-// srd-2-renderer-core R1.3: the error names the key and the line, and no
+// TestUnknownCitationKeyFailsTheConversion covers srd006-citations R3.1 and
+// srd002-renderer-core R1.3: the error names the key and the line, and no
 // fragment comes back with it.
 func TestUnknownCitationKeyFailsTheConversion(t *testing.T) {
 	const source = "Prose.\n\nConverge [@du-2023; @absent-key].\n"
@@ -335,7 +335,7 @@ func TestUnknownCitationKeyFailsTheConversion(t *testing.T) {
 	}
 }
 
-// TestFragmentShape covers srd-2-renderer-core R1.4 and R1.5.
+// TestFragmentShape covers srd002-renderer-core R1.4 and R1.5.
 func TestFragmentShape(t *testing.T) {
 	got := convert(t, "\n\n# A heading\n\nProse.\n\n\n")
 
@@ -352,7 +352,7 @@ func TestFragmentShape(t *testing.T) {
 	}
 }
 
-// TestConversionIsDeterministic covers srd-2-renderer-core R1.2.
+// TestConversionIsDeterministic covers srd002-renderer-core R1.2.
 func TestConversionIsDeterministic(t *testing.T) {
 	const source = "# A heading\n\nProse citing [@du-2023].\n\n- one\n- two\n"
 
@@ -364,7 +364,7 @@ func TestConversionIsDeterministic(t *testing.T) {
 	}
 }
 
-// TestConcurrentConversionsDoNotInterfere covers srd-2-renderer-core R1.2:
+// TestConcurrentConversionsDoNotInterfere covers srd002-renderer-core R1.2:
 // conversion holds no state between calls. Run with -race.
 func TestConcurrentConversionsDoNotInterfere(t *testing.T) {
 	sources := []string{
@@ -399,7 +399,7 @@ func TestConcurrentConversionsDoNotInterfere(t *testing.T) {
 	}
 }
 
-// TestZeroConfigConverts covers srd-2-renderer-core R2.3: a zero Config
+// TestZeroConfigConverts covers srd002-renderer-core R2.3: a zero Config
 // converts a chapter with no citations and no floats, and a citation renders
 // because an absent key set turns validation off.
 func TestZeroConfigConverts(t *testing.T) {
@@ -412,7 +412,7 @@ func TestZeroConfigConverts(t *testing.T) {
 	}
 }
 
-// TestHeadingTextTakesInlineConstructs covers srd-2-renderer-core R3.3:
+// TestHeadingTextTakesInlineConstructs covers srd002-renderer-core R3.3:
 // heading text escapes and renders inline constructs as a paragraph does.
 func TestHeadingTextTakesInlineConstructs(t *testing.T) {
 	const source = "# R&D on *guided* agents\n"
@@ -423,8 +423,8 @@ func TestHeadingTextTakesInlineConstructs(t *testing.T) {
 	}
 }
 
-// TestRawLaTeXIsTheRouteAroundTheMapping covers srd-2-renderer-core R6.5 and
-// srd-7-passthrough R4.3: a construct the mapping does not cover is an error,
+// TestRawLaTeXIsTheRouteAroundTheMapping covers srd002-renderer-core R6.5 and
+// srd007-passthrough R4.3: a construct the mapping does not cover is an error,
 // and the same content written as raw LaTeX converts, so an author proceeds
 // without waiting for a mapping.
 func TestRawLaTeXIsTheRouteAroundTheMapping(t *testing.T) {

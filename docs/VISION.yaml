@@ -1,6 +1,6 @@
 # VISION.yaml -- what md-to-tex is for (GH-2).
 # Goals and boundaries only. ARCHITECTURE.yaml carries the decomposition and
-# docs/srd/ carries the requirements each component answers to.
+# docs/specs/software-requirements/ carries the requirements each component answers to.
 
 id: vision-md-to-tex
 title: md-to-tex Vision
@@ -111,7 +111,7 @@ success_criteria:
       rewrite.
   - id: SC5
     criterion: |
-      Every requirement in docs/srd/ is exercised by at least one test, and the
+      Every requirement in docs/specs/software-requirements/ is exercised by at least one test, and the
       audit target reports which are not.
 
 implementation_phases:

@@ -1,6 +1,6 @@
 # ARCHITECTURE.yaml -- how md-to-tex is put together (GH-2).
 # Components, the public surface, and the decisions that fix the mapping. Each
-# component names the SRD under docs/srd/ that carries its requirements; the
+# component names the SRD under docs/specs/software-requirements/ that carries its requirements; the
 # audit target checks those edges in both directions.
 
 id: architecture-md-to-tex
@@ -73,7 +73,7 @@ interfaces:
       carries sections, prose, floats, and citations, and no preamble: the
       container inputs it. The caller names the file only to place the error
       message; we never open it.
-    srd: docs/srd/srd-2-renderer-core.yaml
+    srd: docs/specs/software-requirements/srd002-renderer-core.yaml
 
   - name: Front-matter rendering
     summary: |
@@ -81,14 +81,14 @@ interfaces:
       front-matter fragment carrying the title, author, and abstract commands
       IEEEtran expects, followed by whatever the body holds, a keywords block
       typically, converted through the chapter path.
-    srd: docs/srd/srd-1-front-matter.yaml
+    srd: docs/specs/software-requirements/srd001-front-matter.yaml
 
   - name: Container generation
     summary: |
       Generates the container document from the chapter roster: document class
       and options, preamble include, one input line per chapter in roster
       order, and the bibliography lines.
-    srd: docs/srd/srd-8-container.yaml
+    srd: docs/specs/software-requirements/srd008-container.yaml
 
   - name: Label collision check
     summary: |
@@ -97,7 +97,7 @@ interfaces:
       heading text behind each. Conversion is per-chapter and sees no other
       chapter, so a heading slug that two chapters derive alike reaches LaTeX
       as a duplicate label; this is where the caller finds out first.
-    srd: docs/srd/srd-2-renderer-core.yaml
+    srd: docs/specs/software-requirements/srd002-renderer-core.yaml
 
   - name: Options
     summary: |
@@ -106,7 +106,7 @@ interfaces:
       thresholds, and the document class options the container carries. Options
       are data, so a caller can hold them in its own configuration file and we
       never read one.
-    srd: docs/srd/srd-2-renderer-core.yaml
+    srd: docs/specs/software-requirements/srd002-renderer-core.yaml
 
 components:
   - name: Front-matter renderer
@@ -122,7 +122,7 @@ components:
       - Take the abstract from the frontmatter field or from the marked body run
       - Render the title, author, and abstract blocks by template and escaping
       - Convert the remaining body through the chapter path
-    srd: docs/srd/srd-1-front-matter.yaml
+    srd: docs/specs/software-requirements/srd001-front-matter.yaml
 
   - name: Renderer core
     responsibility: |
@@ -139,7 +139,7 @@ components:
       - Route every text node through the escaper
       - Fail with a positioned error on an unmapped construct
       - Report the labels a fragment carries, and find collisions across chapters
-    srd: docs/srd/srd-2-renderer-core.yaml
+    srd: docs/specs/software-requirements/srd002-renderer-core.yaml
 
   - name: Escaper
     responsibility: |
@@ -153,7 +153,7 @@ components:
       - Escape the ten LaTeX special characters
       - Pass Unicode through untouched
       - Serve both the template path and the node-renderer path unchanged
-    srd: docs/srd/srd-3-escaping.yaml
+    srd: docs/specs/software-requirements/srd003-escaping.yaml
 
   - name: Figure handling
     responsibility: |
@@ -168,7 +168,7 @@ components:
       - Preserve the figure file name across formats
       - Select the two-column float from a class attribute
       - Apply an optional width fraction
-    srd: docs/srd/srd-4-figures.yaml
+    srd: docs/specs/software-requirements/srd004-figures.yaml
 
   - name: Table handling
     responsibility: |
@@ -182,7 +182,7 @@ components:
       - Weight column widths from cell contents
       - Decide between the single-column and two-column float
       - Reject constructs that would require longtable
-    srd: docs/srd/srd-5-tables.yaml
+    srd: docs/specs/software-requirements/srd005-tables.yaml
 
   - name: Citation extension
     responsibility: |
@@ -195,7 +195,7 @@ components:
       - Parse single and grouped citation syntax as an inline node
       - Render a cite command carrying the comma-joined keys
       - Validate keys against a caller-supplied set and fail on an unknown key
-    srd: docs/srd/srd-6-citations.yaml
+    srd: docs/specs/software-requirements/srd006-citations.yaml
 
   - name: Raw-LaTeX passthrough
     responsibility: |
@@ -208,7 +208,7 @@ components:
       - Pass inline raw LaTeX through unescaped
       - Pass fenced raw-LaTeX blocks through unescaped
       - Keep raw content out of the escaper
-    srd: docs/srd/srd-7-passthrough.yaml
+    srd: docs/specs/software-requirements/srd007-passthrough.yaml
 
   - name: Container generator
     responsibility: |
@@ -221,7 +221,7 @@ components:
       - Emit the document class, preamble include, and bibliography lines
       - Emit the input list in roster order
       - Regenerate on a roster change without touching hand-edited preamble
-    srd: docs/srd/srd-8-container.yaml
+    srd: docs/specs/software-requirements/srd008-container.yaml
 
   - name: Backport compatibility
     responsibility: |
@@ -235,7 +235,7 @@ components:
       - Fix the plain caption and label forms the float renderers emit
       - Forbid wrapper environments and counter-manipulating caption idioms
       - Hold the emitted forms under test against the reader the pipeline uses
-    srd: docs/srd/srd-9-backport-compatibility.yaml
+    srd: docs/specs/software-requirements/srd009-backport-compatibility.yaml
 
 design_decisions:
   - id: D1
@@ -401,7 +401,7 @@ implementation_status:
 related_documents:
   - path: docs/VISION.yaml
     role: "Goals, boundaries, and the phases this decomposition serves."
-  - path: docs/srd/
+  - path: docs/specs/software-requirements/
     role: "One SRD per component; the requirements of record."
   - path: docs/README.md
     role: "The docs layer and its traceability chain."

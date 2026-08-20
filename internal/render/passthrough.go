@@ -9,12 +9,12 @@ import (
 )
 
 // writeText writes a run of markdown text, escaping the prose and passing the
-// LaTeX an author wrote through untouched (srd-7-passthrough R2.1, R2.4).
+// LaTeX an author wrote through untouched (srd007-passthrough R2.1, R2.4).
 //
 // The split is what keeps the mapping bounded: a construct the library does
 // not cover is written directly rather than added to the library
-// (srd-2-renderer-core R6.5). It is also where the two failures meet - a
-// backslash in ordinary prose must still escape (srd-7-passthrough R3.1), and
+// (srd002-renderer-core R6.5). It is also where the two failures meet - a
+// backslash in ordinary prose must still escape (srd007-passthrough R3.1), and
 // a command must reach the output whole.
 func (w *walker) writeText(builder *strings.Builder, content string, offset, blockEnd int) error {
 	position := 0
@@ -57,18 +57,18 @@ func (w *walker) writeText(builder *strings.Builder, content string, offset, blo
 
 // startsControlSequence reports whether content opens a control sequence: a
 // backslash followed by at least one ASCII letter. A backslash before anything
-// else is prose and escapes (srd-7-passthrough R2.1, R3.1).
+// else is prose and escapes (srd007-passthrough R2.1, R3.1).
 func startsControlSequence(content string) bool {
 	return len(content) > 1 && content[0] == '\\' && isASCIILetter(content[1])
 }
 
 // controlSequenceWidth returns the byte width of the control sequence at the
 // start of content: the command name and the balanced brace and bracket groups
-// that follow it directly (srd-7-passthrough R2.1, R2.2).
+// that follow it directly (srd007-passthrough R2.1, R2.2).
 //
 // Recognition is textual and consults no list of known commands. An author who
 // writes an undefined one gets a LaTeX error rather than a conversion error,
-// which is the boundary srd-7-passthrough R3.5 draws.
+// which is the boundary srd007-passthrough R3.5 draws.
 func controlSequenceWidth(content string) (int, error) {
 	position := 1
 	for position < len(content) && isASCIILetter(content[position]) {
@@ -121,7 +121,7 @@ func isASCIILetter(b byte) bool {
 
 // unbalancedGroupError is a control sequence whose argument group never
 // closes. Emitting it would produce a LaTeX error pointing somewhere else
-// entirely (srd-7-passthrough R2.3).
+// entirely (srd007-passthrough R2.3).
 type unbalancedGroupError struct {
 	command string
 	opened  string
@@ -132,10 +132,10 @@ func (e *unbalancedGroupError) Error() string {
 }
 
 // fencedCode renders a code block as verbatim, or passes raw LaTeX through
-// (srd-2-renderer-core R5.4, srd-7-passthrough R1.1, R1.2, R1.4).
+// (srd002-renderer-core R5.4, srd007-passthrough R1.1, R1.2, R1.4).
 //
 // Raw block content is written as it stands: not parsed as markdown, not
-// walked, and not searched for citations (srd-7-passthrough R1.5, R4.2).
+// walked, and not searched for citations (srd007-passthrough R1.5, R4.2).
 func (w *walker) fencedCode(node *ast.FencedCodeBlock) error {
 	body := codeText(node, w.source)
 	if !isRawLaTeX(string(node.Language(w.source))) {
@@ -151,7 +151,7 @@ func (w *walker) fencedCode(node *ast.FencedCodeBlock) error {
 }
 
 // isRawLaTeX reports whether a fenced block's info string marks its content as
-// raw LaTeX. Both markers appear in the manuscripts (srd-7-passthrough R1.3).
+// raw LaTeX. Both markers appear in the manuscripts (srd007-passthrough R1.3).
 //
 // Goldmark reports the info string with its braces, so ```{=latex} arrives as
 // "{=latex}" rather than "=latex".

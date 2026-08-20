@@ -7,7 +7,7 @@ import (
 	mdtotex "github.com/petar-djukic/md-to-tex"
 )
 
-// TestConvertRendersAChapter covers srd-2-renderer-core R1.1 and R1.4 across
+// TestConvertRendersAChapter covers srd002-renderer-core R1.1 and R1.4 across
 // the public surface: source bytes and a name in, a fragment out, no file
 // touched and no preamble emitted.
 func TestConvertRendersAChapter(t *testing.T) {
@@ -25,8 +25,8 @@ func TestConvertRendersAChapter(t *testing.T) {
 	}
 }
 
-// TestOptionsDistinguishAbsentFromEmptyKeys covers srd-2-renderer-core R2.3
-// and srd-6-citations R3.2 through the public Options: nil turns validation
+// TestOptionsDistinguishAbsentFromEmptyKeys covers srd002-renderer-core R2.3
+// and srd006-citations R3.2 through the public Options: nil turns validation
 // off, an empty non-nil slice holds no valid key.
 func TestOptionsDistinguishAbsentFromEmptyKeys(t *testing.T) {
 	const source = "Prose citing [@du-2023].\n"
@@ -46,7 +46,7 @@ func TestOptionsDistinguishAbsentFromEmptyKeys(t *testing.T) {
 	}
 }
 
-// TestConvertReturnsNoFragmentWithAnError covers srd-2-renderer-core R1.3: a
+// TestConvertReturnsNoFragmentWithAnError covers srd002-renderer-core R1.3: a
 // conversion never returns partial output alongside an error.
 func TestConvertReturnsNoFragmentWithAnError(t *testing.T) {
 	const source = "# A heading\n\nProse.\n\n---\n\nMore prose.\n"
@@ -63,7 +63,7 @@ func TestConvertReturnsNoFragmentWithAnError(t *testing.T) {
 	}
 }
 
-// TestConvertReadsNoConfiguration covers srd-2-renderer-core R2.1: Options is
+// TestConvertReadsNoConfiguration covers srd002-renderer-core R2.1: Options is
 // a plain value, so a caller constructs it in Go and the library reads no
 // configuration file of its own.
 func TestConvertReadsNoConfiguration(t *testing.T) {

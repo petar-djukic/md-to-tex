@@ -1,4 +1,4 @@
-id: srd-5-tables
+id: srd005-tables
 title: Table Handling
 
 problem: |
@@ -33,9 +33,9 @@ requirements:
     title: Input syntax
     items:
       - R1.1: 'A table float is a pipe table followed by a caption line: a paragraph whose first characters are the word Table and a colon. The caption is what follows the colon, with surrounding whitespace trimmed.'
-      - R1.2: The caption line may carry an attribute block delimited by braces holding an identifier introduced by a hash, as an image block does (srd-4-figures R1.2). The identifier becomes the label.
+      - R1.2: The caption line may carry an attribute block delimited by braces holding an identifier introduced by a hash, as an image block does (srd004-figures R1.2). The identifier becomes the label.
       - R1.3: A caption line must follow its table with no intervening block. A paragraph opening with the word Table and a colon anywhere else is ordinary prose and is rendered as a paragraph.
-      - R1.4: A pipe table with no caption line is an error naming the file and line. A float LaTeX places away from its text needs a caption to be identifiable, and a table that needs no caption is written as raw LaTeX in place (srd-7-passthrough).
+      - R1.4: A pipe table with no caption line is an error naming the file and line. A float LaTeX places away from its text needs a caption to be identifiable, and a table that needs no caption is written as raw LaTeX in place (srd007-passthrough).
       - R1.5: A caption line carrying no identifier is an error, for the reason R1.4 gives.
   R2:
     title: Float emission
@@ -43,9 +43,9 @@ requirements:
       - R2.1: 'The float is emitted as the table environment with the top-of-page placement specifier, then the caption, then the label, then a centering command, then the tabularx environment - in that order. The caption precedes the table body, which is where a table caption belongs and where the manuscripts hand-write it.'
       - R2.2: 'The tabularx environment takes the enclosing measure as its width argument - the column width for a single-column float, the text width for a two-column float - and the column specification R3 computes.'
       - R2.3: 'The body is a top rule, the header row, a middle rule, the body rows, and a bottom rule. Cells are joined by an ampersand with a single space on each side, and each row ends with a LaTeX row terminator.'
-      - R2.4: Header cells are rendered as written. The pandoc filter emboldens them; we do not, because a bold header comes back through the backport as emphasis markup the author did not write (srd-9-backport-compatibility).
+      - R2.4: Header cells are rendered as written. The pandoc filter emboldens them; we do not, because a bold header comes back through the backport as emphasis markup the author did not write (srd009-backport-compatibility).
       - R2.5: 'The caption and label are plain commands. Stepping the table counter by hand and setting the caption as bold body text is forbidden: it produces a caption the reader recognizes and the backport does not.'
-      - R2.6: 'Cell content renders as inline content through the renderer core, so escaping, emphasis, and citations behave as they do in a paragraph (srd-2-renderer-core, srd-6-citations).'
+      - R2.6: 'Cell content renders as inline content through the renderer core, so escaping, emphasis, and citations behave as they do in a paragraph (srd002-renderer-core, srd006-citations).'
       - R2.7: A font size command is emitted after the centering command when Options states one, and the default is the size one step below the body. A caller that wants body-size tables states an empty size.
     examples:
       - markdown: |
@@ -126,7 +126,7 @@ requirements:
       - R5.1: 'Longtable is never emitted. A two-column class has nowhere to put a page-breaking table: the result is a broken build rather than a wide one.'
       - R5.2: A table too tall for a float page is not detected here. The author splits it, sets it as raw LaTeX, or moves it to an appendix the caller assembles.
       - R5.3: 'Cuted''s strip environment and any other non-float spanning mechanism are forbidden: material inserted into the two-column flow without reserving space lands on top of the column text.'
-      - R5.4: Multi-row and multi-column cells are not supported. A pipe table cannot express them, and a table needing them is written as raw LaTeX (srd-7-passthrough).
+      - R5.4: Multi-row and multi-column cells are not supported. A pipe table cannot express them, and a table needing them is written as raw LaTeX (srd007-passthrough).
 
 non_goals:
   - "Reading the legacy convention where a one-column markdown table carries the caption for the table that follows it."
@@ -137,22 +137,33 @@ non_goals:
 acceptance_criteria:
   - id: AC1
     criterion: A three-column table with a caption line renders as a float whose caption precedes the tabularx and whose label follows the caption, with plain caption and label commands and no counter stepping.
-    traces: [R2.1, R2.5]
+    traces: [R1.1, R1.2, R2.1, R2.2, R2.3, R2.5, R2.7]
   - id: AC2
     criterion: The weighting applied to a table whose columns hold short, medium, and long cells produces weights summing to the column count, each at or above its floor and at or below the clamp.
-    traces: [R3.3, R3.4, R3.5]
+    traces: [R3.1, R3.2, R3.3, R3.4, R3.5, R3.6]
   - id: AC3
     criterion: A five-column table, a two-column table of 200-character cells, and a fifteen-row table of modest cells each select the starred environment; a small three-column table does not.
-    traces: [R4.1, R4.2, R4.5]
+    traces: [R4.1, R4.2, R4.3, R4.4, R4.5]
   - id: AC4
     criterion: A pipe table with no caption line, and a caption line with no identifier, each fail with an error naming the file and line.
     traces: [R1.4, R1.5]
   - id: AC5
     criterion: No emitted table contains longtable, a strip environment, or a bold header row.
-    traces: [R2.4, R5.1, R5.3]
+    traces: [R2.4, R5.1, R5.2, R5.3, R5.4]
   - id: AC6
     criterion: A paragraph opening with the word Table and a colon that does not follow a table renders as an ordinary paragraph.
     traces: [R1.3]
   - id: AC7
     criterion: Cells holding citations render the cite command, demonstrating that cell content takes the inline path.
     traces: [R2.6]
+  - id: AC8
+    criterion: A table whose cells offer nothing to measure falls back to equal-width columns rather than failing.
+    traces: [R3.7]
+
+depends_on:
+  - srd_id: srd002-renderer-core
+    symbols_used: [R1, R4]
+  - srd_id: srd004-figures
+    symbols_used: [R1]
+  - srd_id: srd006-citations
+    symbols_used: [R2]

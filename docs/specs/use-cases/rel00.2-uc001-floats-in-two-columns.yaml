@@ -1,0 +1,110 @@
+# Copyright (c) 2026 Petar Djukic. All rights reserved. SPDX-License-Identifier: MIT
+
+id: rel00.2-uc001-floats-in-two-columns
+title: Figures and Tables Written in Native Markdown Render as Floats
+
+summary: |
+  An author writes a figure as an image block and a table as a pipe table with
+  a caption line, both of which Obsidian renders while the author works. The
+  pipeline converts the chapter and gets IEEEtran floats: the figure carrying
+  its include, caption, and label, the table carrying a weighted tabularx, and
+  each in the single-column or two-column environment its own dimensions call
+  for.
+
+  The caption is written once, as the image alt text or the caption line, and
+  the emitted forms stay close enough to what an author hand-writes that an
+  edit made on the LaTeX side comes back through the pipeline's backport as
+  prose.
+
+actor: The paper pipeline, converting a chapter that carries floats.
+
+trigger: |
+  The pipeline converts a chapter whose markdown holds an image block or a
+  pipe table.
+
+preconditions:
+  - The chapter converts as prose today (rel00.1-uc001).
+  - The figure files exist where the container's graphics path points; the library checks nothing about them.
+  - Each float carries the identifier its cross-references name.
+
+flow:
+  - id: F1
+    text: An image block with alt text and an identifier becomes a figure float carrying the include, the caption from the alt text, and the label from the identifier.
+  - id: F2
+    text: The figure file name reaches the LaTeX unchanged but for its directory, which the container supplies as a graphics path.
+  - id: F3
+    text: A pipe table followed by its caption line becomes a tabularx float whose caption precedes the table body.
+  - id: F4
+    text: Column widths are computed from what the cells hold, so a column of three words does not take the same measure as a column of comma lists.
+  - id: F5
+    text: Each float renders in the single-column environment, or in the two-column variant when its own dimensions or an author's class attribute call for it.
+  - id: F6
+    text: The emitted caption and label are plain commands with no wrapper between them and the float, so the backport recovers a caption edit as prose.
+
+touchpoints:
+  - id: T1
+    target: srd004-figures R1 R2 AC1 -- An image block with alt text and an identifier renders as the float shape the manuscripts hand-write.
+    reason: Flow F1 is the figure mapping, and the caption written once is what it exists to preserve.
+  - id: T2
+    target: srd004-figures R3 R4 AC2 AC3 -- The wide class and width attribute select the environment and measure, and the file name survives the crossing.
+    reason: Flow F2 and F5 are the naming correspondence and the float choice on the figure side.
+  - id: T3
+    target: srd005-tables R1 R2 AC1 -- A pipe table and its caption line render as a tabularx float with the caption above the body.
+    reason: Flow F3 is the table mapping, including where the caption sits.
+  - id: T4
+    target: srd005-tables R3 AC2 -- Column weights come from the cell contents, floored at the longest unbreakable word and clamped.
+    reason: Flow F4 is the weighting, which is what keeps a table from arriving as a tall ribbon.
+  - id: T5
+    target: srd005-tables R4 AC3 -- The two-column decision follows the column count, the widest cell, and the estimated height.
+    reason: Flow F5 is the float choice on the table side, and the bars are set where an in-column table would genuinely be cramped.
+  - id: T6
+    target: srd009-backport-compatibility R2 R3 AC1 AC2 AC3 -- The permitted caption forms are plain, and wrapper environments and hand-stepped counters are forbidden.
+    reason: Flow F6 is the constraint both float renderers answer to, which is why the caption comes back as prose rather than as a raw block.
+
+success_criteria:
+  - id: S1
+    criterion: An image block renders byte-for-byte as the figure float the SRD states, with the include, the caption from the alt text, and the label from the identifier.
+    traces:
+      - srd004-figures R2.1
+      - srd004-figures R2.2
+      - srd004-figures AC1
+  - id: S2
+    criterion: A figure referenced in markdown as a PDF under a directory is included as the same file name, with the directory dropped and the extension kept.
+    traces:
+      - srd004-figures R4.1
+      - srd004-figures R4.2
+      - srd004-figures AC3
+  - id: S3
+    criterion: A table renders as a float whose caption precedes the tabularx, with plain caption and label commands and no hand-stepped counter.
+    traces:
+      - srd005-tables R2.1
+      - srd005-tables R2.5
+      - srd005-tables AC1
+  - id: S4
+    criterion: Column weights sum to the column count, each at or above its floor and at or below the clamp, and a five-column table spans both columns.
+    traces:
+      - srd005-tables R3.3
+      - srd005-tables R4.1
+      - srd005-tables AC2
+      - srd005-tables AC3
+  - id: S5
+    criterion: No emitted float carries an adjustbox environment, a strip environment, a longtable, or a bold header row.
+    traces:
+      - srd005-tables R5.1
+      - srd009-backport-compatibility R3.1
+      - srd009-backport-compatibility R3.3
+      - srd009-backport-compatibility AC3
+  - id: S6
+    criterion: A caption edited in an emitted float comes back through the pipeline's reader as a prose difference confined to the caption.
+    traces:
+      - srd009-backport-compatibility R1.1
+      - srd009-backport-compatibility R2.1
+      - srd009-backport-compatibility AC2
+
+out_of_scope:
+  - Compiling the figures from their diagram sources, which stays with the pipeline.
+  - The backport reader itself, which stays on pandoc in the pipeline.
+  - Tables needing merged cells or column alignment, which an author writes as raw LaTeX.
+
+test_suite_trace: test-rel00.2-floats
+status: planned

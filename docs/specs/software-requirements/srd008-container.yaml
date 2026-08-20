@@ -1,4 +1,4 @@
-id: srd-8-container
+id: srd008-container
 title: Container Generator
 
 problem: |
@@ -29,7 +29,7 @@ requirements:
       - R1.1: 'The container is emitted in fixed order: the document class with its options, the preamble include, the bibliography style, the graphics path, the document environment holding the input list, the bibliography line, and the environment end.'
       - R1.2: The document class and its options come from Options. The class the manuscripts use is IEEEtran, and the library neither ships nor validates a class file.
       - R1.3: 'The preamble is included by reference, never inlined: the container names the preamble file and the author owns its contents. The library does not generate, read, or check it.'
-      - R1.4: The graphics path is emitted before the document environment and names the directories that hold the figure files, so a figure included by base name resolves (srd-4-figures R4.1).
+      - R1.4: The graphics path is emitted before the document environment and names the directories that hold the figure files, so a figure included by base name resolves (srd004-figures R4.1).
       - R1.5: 'The bibliography style is the IEEE natbib style, and the bibliography line names the bibliography file without its extension. The library does not generate the bibliography file: the caller builds it from its corpus.'
       - R1.6: The container carries no prose, no float, and no section. Everything the reader sees arrives through an input line.
     examples:
@@ -56,14 +56,14 @@ requirements:
     title: The input list
     items:
       - R2.1: 'Each chapter in the roster contributes one input line, in roster order. The argument is the chapter''s base name with its markdown extension removed and no extension added: LaTeX supplies the extension, and naming it defeats the search path.'
-      - R2.2: 'The mapping is one-to-one and mechanical. A chapter named NN-name.md becomes an input of NN-name, whose fragment is written to NN-name.tex. The front matter is not special-cased: 00-front-matter.md becomes 00-front-matter like any other chapter (srd-1-front-matter).'
+      - R2.2: 'The mapping is one-to-one and mechanical. A chapter named NN-name.md becomes an input of NN-name, whose fragment is written to NN-name.tex. The front matter is not special-cased: 00-front-matter.md becomes 00-front-matter like any other chapter (srd001-front-matter).'
       - R2.3: A chapter's directory prefix is dropped, because the fragments are written into one directory beside the container.
       - R2.4: An empty roster is an error. A document with no inputs compiles to an empty paper, which is never what the caller meant.
       - R2.5: Two chapters whose base names are the same is an error naming both. Their fragments would collide in the tex directory.
   R3:
     title: Regeneration
     items:
-      - R3.1: The generator returns the container document. Whether to write it, and over what, is the caller's decision (srd-2-renderer-core R1.1).
+      - R3.1: The generator returns the container document. Whether to write it, and over what, is the caller's decision (srd002-renderer-core R1.1).
       - R3.2: Generation is deterministic - the same roster and Options produce byte-identical output - so a caller can compare the generated container against the one on disk to decide whether anything changed.
       - R3.3: 'A container regenerates when the roster changes. Nothing else in it depends on chapter content, so no chapter edit can require it.'
       - R3.4: 'The preamble file is what survives regeneration, by not being part of the container: an author''s adjustment lives in a file the generator only names.'
@@ -73,12 +73,12 @@ non_goals:
   - "Generating the bibliography file, which the caller builds from its reference corpus."
   - "Compiling the document. Latexmk stays with the caller."
   - "Merging hand edits made inside the container itself. The container holds nothing worth hand-editing; an author who edits it anyway loses that edit on the next roster change."
-  - "Detecting label collisions across chapters. The container never reads a fragment; that check is srd-2-renderer-core R7, over the label reports conversion returns."
+  - "Detecting label collisions across chapters. The container never reads a fragment; that check is srd002-renderer-core R7, over the label reports conversion returns."
 
 acceptance_criteria:
   - id: AC1
     criterion: A three-chapter roster produces the container in the R1 example, in that order, with one input line per chapter and no extension on any input argument.
-    traces: [R1.1, R2.1, R2.2]
+    traces: [R1.1, R1.2, R1.3, R1.5, R2.1, R2.2, R2.3]
   - id: AC2
     criterion: The front-matter chapter appears in the input list on the same terms as every other chapter, with no special case in the generator.
     traces: [R2.2]
@@ -87,10 +87,21 @@ acceptance_criteria:
     traces: [R2.4, R2.5]
   - id: AC4
     criterion: Generating twice from the same roster yields byte-identical output, and the generator writes no file.
-    traces: [R3.1, R3.2]
+    traces: [R3.1, R3.2, R3.3]
   - id: AC5
     criterion: The container contains no section, no float, and no prose - every line is a declaration, an input, or an environment delimiter.
     traces: [R1.6]
   - id: AC6
     criterion: A figure included by base name resolves under the emitted graphics path when the document is compiled from the tex directory.
     traces: [R1.4]
+  - id: AC7
+    criterion: An author edit to the preamble file survives regeneration, because the container names that file rather than carrying its contents.
+    traces: [R3.4]
+
+depends_on:
+  - srd_id: srd001-front-matter
+    symbols_used: [R4]
+  - srd_id: srd002-renderer-core
+    symbols_used: [R1]
+  - srd_id: srd004-figures
+    symbols_used: [R4]
