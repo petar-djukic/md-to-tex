@@ -63,14 +63,14 @@ releases:
     use_cases:
       - id: rel00.2-uc001-floats-in-two-columns
         summary: Figures and tables written in native markdown render as floats.
-        status: planned
+        status: done
     name: Floats
-    status: pending
+    status: complete
     units:
       - srd004-figures
       - srd005-tables
       - srd009-backport-compatibility
-    gate: 'rel00.1 complete (floats render inside the chapter walk). Figures and tables land together with the backport constraint verified across their output, because srd-9 is a bar on what the float renderers may emit rather than a component that can trail them.'
+    gate: 'rel00.1 complete (floats render inside the chapter walk). Figures and tables land together with the backport constraint verified across their output, because srd009-backport-compatibility is a bar on what the float renderers may emit rather than a component that can trail them.'
 
   - id: rel00.3
     version: "00.3"

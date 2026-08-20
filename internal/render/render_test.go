@@ -251,7 +251,7 @@ func TestRawLaTeXBlockPassesThrough(t *testing.T) {
 // TestHTMLCommentsAreDropped covers srd002-renderer-core R6.3, which is what
 // keeps the manuscripts' backlink comments out of the LaTeX.
 func TestHTMLCommentsAreDropped(t *testing.T) {
-	const source = "# Introduction\n\n<!-- S1 -- governed by docs/specs/software-requirements/srd-1.yaml -->\n\nProse.\n"
+	const source = "# Introduction\n\n<!-- S1 -- governed by docs/specs/software-requirements/srd001-front-matter.yaml -->\n\nProse.\n"
 
 	got := convert(t, source)
 	if strings.Contains(got, "governed by") || strings.Contains(got, "<!--") {
