@@ -24,13 +24,28 @@ pipeline can adopt on its own.
 
 | Edge | From -> to | Checked by |
 |------|-----------|------------|
-| goals | VISION success criteria -> ARCHITECTURE components | inspection |
-| requirements | ARCHITECTURE `srd:` pointers -> `docs/specs/software-requirements/*.yaml` | `mage audit`, both directions |
-| implementation | SRD requirement ids -> tests naming them | `mage audit` |
-| releases | road-map.yaml units -> `docs/specs/software-requirements/*.yaml`, exactly one release per SRD | `mage audit`, both directions |
+| components | ARCHITECTURE `srd:` pointers -> requirement documents | `internal/specs`, both directions |
+| requirements | the corpus graph: index, documents, and their references | the specification-critic |
+| coverage | requirement items -> acceptance criteria -> test cases | the specification-critic |
+| evidence | test case `go_test` -> a Go test that exists | the test-evidence audit |
+| use cases | touchpoints -> requirement groups and criteria | the specification-critic |
+| releases | road-map `units` -> requirement documents, exactly one release per document | `internal/specs`, both directions |
 
-Both directions on requirements means every pointer resolves to a file and
-every SRD on disk is named by a component, so neither a dangling pointer nor
-an orphan specification survives the audit. The audit also parses every file
-strictly, which makes a duplicate mapping key an error rather than a dropped
-field.
+Every edge is walked in both directions. A pointer resolving to no file and a
+document no pointer names are both errors, as are a criterion tracing a
+requirement that does not exist and a test claim naming a Go test that does
+not. Parsing is strict throughout, so a duplicate mapping key fails rather
+than dropping a field.
+
+## The commands
+
+`mage audit` runs the corpus checks before the code checks. The corpus checks
+are the specification-critic from
+[declarative-agents](https://github.com/petar-djukic/declarative-agents), which
+validates this same format across the sibling repositories: it is found beside
+this repository, or through `AGENT_CORE_ROOT` and `AGENT_PROFILES_ROOT`, and
+built from source when the checkout carries no binary. The release edge is
+this repository's own, because the shared roadmap schema has no field for it,
+and the component edge is ours because ARCHITECTURE.yaml is not part of the shared corpus; both run under `go test ./...` with no checkout present.
+
+`mage specs` runs the corpus checks alone.
