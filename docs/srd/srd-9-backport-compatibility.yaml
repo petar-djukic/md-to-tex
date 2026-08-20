@@ -1,0 +1,98 @@
+id: srd-9-backport-compatibility
+title: Backport Compatibility
+
+problem: |
+  The pipeline runs both directions. Markdown converts to LaTeX here; LaTeX
+  converts back through pandoc's reader in paperkit, which compares each
+  chapter in markdown space - the baseline LaTeX read back, the author's
+  current LaTeX read back, and the markdown on disk - and proposes whatever
+  prose edit survives that path. An edit made on the LaTeX side reaches the
+  markdown only if the reader recovers it as prose.
+
+  That makes what we emit a constraint rather than a preference. LaTeX that
+  compiles is not enough: a caption set as bold body text after a hand-stepped
+  counter compiles perfectly and comes back as a raw block, so an author who
+  fixes a caption in the tex loses the fix at the next generation. The same
+  holds for a float wrapped in an environment the reader does not know, which
+  swallows everything inside it. The pandoc filter this library replaces emits
+  both forms, which is why the round trip has been carrying typesetting-only
+  dispositions where it should have carried prose.
+
+  This SRD holds no renderer. It states the invariant the emitting components
+  answer to, and it is the reason several of their requirements read the way
+  they do.
+
+goals:
+  - G1: Keep every emitted construct readable by the reader the pipeline runs
+  - G2: Fix the caption and label forms the float renderers may use
+  - G3: Name the forms that are forbidden, and what each one breaks
+  - G4: Hold the constraint under test rather than under review
+
+requirements:
+  R1:
+    title: The invariant
+    items:
+      - R1.1: 'Every construct this library emits must survive the pipeline''s LaTeX reader well enough that an edit to its prose - a caption, a paragraph, a table cell - comes back as a prose change in the markdown rather than as a raw block.'
+      - R1.2: 'The test of a construct is not whether it compiles. A form that compiles and reads back as raw fails this SRD.'
+      - R1.3: Typesetting the author changes on the LaTeX side - float placement, column hints, sizing - is expected to be lost on the way back, and is what the pipeline classifies as a typesetting-only edit. Losing prose is the failure this SRD prevents.
+      - R1.4: 'The constraint binds srd-1-front-matter, srd-2-renderer-core, srd-4-figures, and srd-5-tables. It does not bind srd-7-passthrough: raw LaTeX is the author''s, and what the reader makes of it is the author''s to accept.'
+  R2:
+    title: Permitted caption forms
+    items:
+      - R2.1: 'A caption is the caption command with the caption text as its only argument, emitted as a direct child of the float environment. A label follows it, as a label command carrying the identifier and nothing else.'
+      - R2.2: Nothing may sit between the float environment and its caption but a centering command, an include, a font size command, and the tabular material itself.
+      - R2.3: 'Figure captions follow the include; table captions precede the tabular material. Both positions are what the manuscripts hand-write and what the reader expects for each float kind (srd-4-figures R2.1, srd-5-tables R2.1).'
+      - R2.4: Caption text is inline content rendered by the renderer core. A caption carrying emphasis or a citation comes back carrying the same, because the reader recovers both.
+    examples:
+      - markdown: |
+          The permitted form, as srd-4-figures R2.1 emits it.
+        latex: |
+          \begin{figure}[!t]
+          \centering
+          \includegraphics[width=\columnwidth]{01-kinds-to-levels.pdf}
+          \caption{Autonomy levels graded by who writes the specification.}
+          \label{fig:kinds-to-levels}
+          \end{figure}
+  R3:
+    title: Forbidden forms
+    items:
+      - R3.1: 'A wrapper environment around a float''s content is forbidden. Adjustbox is the case that matters, because the pandoc filter emits it: the reader does not know the environment, so the include, the caption, and the label come back as one raw block and no prose is recoverable. Constrains srd-4-figures R2.4.'
+      - R3.2: 'A caption assembled by hand - stepping the table counter and setting the label text as bold body text - is forbidden. It reads back as bold prose that no longer looks like a caption, so a caption edit merges into the body or is dropped. Constrains srd-5-tables R2.5.'
+      - R3.3: 'Emboldening header cells is forbidden. The reader recovers the bold as emphasis markup around every header cell, so the backported markdown differs from the source in cells nobody edited, and every table then reads as a prose change. Constrains srd-5-tables R2.4.'
+      - R3.4: 'Non-float spanning mechanisms - the strip environment among them - are forbidden. Beyond overlapping the column text, they read back as raw. Constrains srd-5-tables R5.3.'
+      - R3.5: 'Longtable is forbidden for the layout reason srd-5-tables R5.1 gives, and the reader is not the reason: a longtable reads back acceptably. This SRD records that the two constraints agree here rather than that one implies the other.'
+      - R3.6: A construct that reads back as raw is forbidden even when its LaTeX is unremarkable. R4 says how that is established.
+  R4:
+    title: How the constraint is tested
+    items:
+      - R4.1: 'The constraint is a property of a reader this library does not own, so it is tested against that reader rather than asserted. A fixture corpus holds one emitted construct per case - figure, wide figure, table, wide table, front matter, prose carrying citations and raw LaTeX.'
+      - R4.2: 'Each fixture is converted back through the pipeline''s reader, and the test asserts that the caption text, the paragraph text, and the table cell text appear as prose in the result. A fixture whose text appears inside a raw block fails.'
+      - R4.3: 'A second assertion covers the round trip: a fixture edited in its caption and read back must differ from the unedited fixture read back, in the caption and nowhere else. This is what catches a form whose prose is recoverable but not attributable.'
+      - R4.4: These tests require the reader, which the library does not depend on, so they are skipped when it is absent and run in the environment the pipeline builds in.
+      - R4.5: 'A change to an emitted form reruns them. When the reader changes under us, they fail without any change here, which is the alert this SRD exists to raise.'
+
+non_goals:
+  - "Implementing, replacing, or improving the backport reader. That direction stays in paperkit."
+  - "Recovering typesetting edits. R1.3 states they are expected to be lost."
+  - "Constraining raw LaTeX the author writes (R1.4)."
+  - "Guaranteeing a lossless round trip. The conversion back is lossy by nature; what this SRD requires is that prose survives it."
+
+acceptance_criteria:
+  - id: AC1
+    criterion: Every fixture in the corpus reads back with its caption, paragraph, and cell text as prose, none of it inside a raw block.
+    traces: [R1.1, R4.1, R4.2]
+  - id: AC2
+    criterion: A caption edited in an emitted figure and in an emitted table both come back as a prose difference confined to the caption.
+    traces: [R2.1, R4.3]
+  - id: AC3
+    criterion: A grep over the library's output for adjustbox, refstepcounter, a strip environment, and longtable finds nothing.
+    traces: [R3.1, R3.2, R3.4, R3.5]
+  - id: AC4
+    criterion: An emitted table's header row carries no emphasis, and a backported table differs from its source in edited cells only.
+    traces: [R3.3]
+  - id: AC5
+    criterion: A float-placement edit made in an emitted float produces no prose difference, confirming the typesetting boundary rather than a failure.
+    traces: [R1.3]
+  - id: AC6
+    criterion: The fixture tests skip cleanly where the reader is absent and run where it is present.
+    traces: [R4.4]

@@ -1,0 +1,158 @@
+id: srd-5-tables
+title: Table Handling
+
+problem: |
+  A pipe table is the one structured construct authors write constantly and
+  LaTeX renders worst. IEEEtran sets two columns roughly three and a half
+  inches wide, so a table that reads well in the editor arrives as a tall
+  ribbon with one column wrapped to five lines and another running empty.
+  Equal-width columns are the cause: tabularx divides the measure evenly and
+  the text does not arrive evenly.
+
+  Two decisions follow from the layout and neither can be left to the author.
+  Whether a table spans both columns has to be decided from what the table
+  holds, because an author who marks everything wide gets a paper of float
+  pages - the pandoc filter's own history records that spanning everything took
+  float-only pages from 2 to 24 out of 112. How the measure divides among the
+  columns has to be computed from the cell contents, because the author cannot
+  see the column widths from the markdown.
+
+  The pandoc filter this library replaces solved both, and its arithmetic is
+  the corpus-tested part worth keeping. What it emits around the table is not:
+  it steps the table counter by hand and sets the caption as bold body text,
+  which compiles and does not come back through the backport as a caption.
+
+goals:
+  - G1: Render a pipe table and its caption line as a float with a caption and a label
+  - G2: Divide the measure among columns by what the cells hold
+  - G3: Decide the two-column float from the table's own dimensions
+  - G4: Emit the float shape the manuscripts hand-write, with plain caption and label commands
+
+requirements:
+  R1:
+    title: Input syntax
+    items:
+      - R1.1: 'A table float is a pipe table followed by a caption line: a paragraph whose first characters are the word Table and a colon. The caption is what follows the colon, with surrounding whitespace trimmed.'
+      - R1.2: The caption line may carry an attribute block delimited by braces holding an identifier introduced by a hash, as an image block does (srd-4-figures R1.2). The identifier becomes the label.
+      - R1.3: A caption line must follow its table with no intervening block. A paragraph opening with the word Table and a colon anywhere else is ordinary prose and is rendered as a paragraph.
+      - R1.4: A pipe table with no caption line is an error naming the file and line. A float LaTeX places away from its text needs a caption to be identifiable, and a table that needs no caption is written as raw LaTeX in place (srd-7-passthrough).
+      - R1.5: A caption line carrying no identifier is an error, for the reason R1.4 gives.
+  R2:
+    title: Float emission
+    items:
+      - R2.1: 'The float is emitted as the table environment with the top-of-page placement specifier, then the caption, then the label, then a centering command, then the tabularx environment - in that order. The caption precedes the table body, which is where a table caption belongs and where the manuscripts hand-write it.'
+      - R2.2: 'The tabularx environment takes the enclosing measure as its width argument - the column width for a single-column float, the text width for a two-column float - and the column specification R3 computes.'
+      - R2.3: 'The body is a top rule, the header row, a middle rule, the body rows, and a bottom rule. Cells are joined by an ampersand with a single space on each side, and each row ends with a LaTeX row terminator.'
+      - R2.4: Header cells are rendered as written. The pandoc filter emboldens them; we do not, because a bold header comes back through the backport as emphasis markup the author did not write (srd-9-backport-compatibility).
+      - R2.5: 'The caption and label are plain commands. Stepping the table counter by hand and setting the caption as bold body text is forbidden: it produces a caption the reader recognizes and the backport does not.'
+      - R2.6: 'Cell content renders as inline content through the renderer core, so escaping, emphasis, and citations behave as they do in a paragraph (srd-2-renderer-core, srd-6-citations).'
+      - R2.7: A font size command is emitted after the centering command when Options states one, and the default is the size one step below the body. A caller that wants body-size tables states an empty size.
+    examples:
+      - markdown: |
+          | Survey | Scope | What this article adds |
+          |--------|-------|------------------------|
+          | Coronado et al., 2022 [@coronado-2022-ztn-survey] | Zero-touch automation for 5G/6G | Grades by who supplies the software |
+          | This article | Agentic AI across the autonomy levels | One frame: maturity, intent loop, governance |
+
+          Table: Adjacent surveys and what this article adds over each. {#tab:adjacent-surveys}
+        latex: |
+          \begin{table}[!t]
+          \caption{Adjacent surveys and what this article adds over each.}
+          \label{tab:adjacent-surveys}
+          \centering
+          \footnotesize
+          \begin{tabularx}{\columnwidth}{>{\hsize=1.216\hsize\raggedright\arraybackslash}X >{\hsize=0.858\hsize\raggedright\arraybackslash}X >{\hsize=0.925\hsize\raggedright\arraybackslash}X}
+          \toprule
+          Survey & Scope & What this article adds \\
+          \midrule
+          Coronado et al., 2022 \cite{coronado-2022-ztn-survey} & Zero-touch automation for 5G/6G & Grades by who supplies the software \\
+          This article & Agentic AI across the autonomy levels & One frame: maturity, intent loop, governance \\
+          \bottomrule
+          \end{tabularx}
+          \end{table}
+        note: |
+          Three columns, longest cell 53 characters, estimated height 6 lines,
+          so R4 selects the unstarred float and the column measure. The first
+          column carries the largest weight because the citation key is an
+          unbreakable 24-character word and R3.4 floors the column at the width
+          that word needs.
+  R3:
+    title: Column weighting
+    items:
+      - R3.1: 'Each column''s weight starts from the mean rendered length of its body cells, measured in characters after inline rendering. A column with no body cells - an all-header table - is measured from its header cells instead.'
+      - R3.2: 'The mean is floored at one and then damped by its square root: a column holding ten times the text needs about three times the width, because long text wraps and short text cannot shrink below its longest word.'
+      - R3.3: Damped means are normalized so the weights sum to the column count, which is what tabularx requires of a hsize specification.
+      - R3.4: 'Each column has a floor: the greater of 0.45 and the column''s longest unbreakable word taken as a share of the row''s total longest-word length, scaled by 0.85. A column narrower than its longest word overflows the rule. Word length is measured after removing LaTeX control sequences and braces.'
+      - R3.5: Each weight is clamped to at most 2.2, and the weights are then rescaled so they again sum to the column count.
+      - R3.6: 'The column specification is one entry per column, each an X column carrying its weight as an hsize factor with ragged-right alignment and the array backslash restored, joined by single spaces. Weights are formatted to three decimal places.'
+      - R3.7: A table whose weighting cannot be computed - no measurable cells at all - falls back to equal-width X columns.
+  R4:
+    title: The two-column decision
+    items:
+      - R4.1: 'A table spans both columns when any of three conditions holds: it has five or more columns; the longest single cell in characters multiplied by the column count exceeds 350; or the estimated rendered height exceeds 45 lines.'
+      - R4.2: 'Estimated height charges each body row the lines its widest cell needs, computed as that cell''s character count multiplied by the column count divided by 55 and rounded up, with a minimum of one line per row. The divisor is the characters one column fits on a line at the table''s font size.'
+      - R4.3: 'Column count alone is not the test. A two-column table of 200-character cells is as cramped as a five-column table of short ones, and a fifteen-row table of modest cells still runs half a column as a ribbon.'
+      - R4.4: The bars are set high on purpose. Spanning turns a table into a float that leaves its text behind, so spanning everything is worse than spanning nothing.
+      - R4.5: A spanning table uses the starred table environment and the text width; a non-spanning table uses the plain environment and the column width. Both are floats.
+    examples:
+      - markdown: |
+          | Level | Who writes it | Approval | Coverage | Example |
+          |-------|---------------|----------|----------|---------|
+          | L3 | Guided agent | Per change | Selected | Fault management |
+          | L4 | Guided agent | Pre-approved | Wide | Change management |
+
+          Table: Autonomy levels by authorship and approval. {#tab:levels}
+        latex: |
+          \begin{table*}[!t]
+          \caption{Autonomy levels by authorship and approval.}
+          \label{tab:levels}
+          \centering
+          \footnotesize
+          \begin{tabularx}{\textwidth}{>{\hsize=0.456\hsize\raggedright\arraybackslash}X >{\hsize=1.116\hsize\raggedright\arraybackslash}X >{\hsize=1.272\hsize\raggedright\arraybackslash}X >{\hsize=0.848\hsize\raggedright\arraybackslash}X >{\hsize=1.309\hsize\raggedright\arraybackslash}X}
+          \toprule
+          Level & Who writes it & Approval & Coverage & Example \\
+          \midrule
+          L3 & Guided agent & Per change & Selected & Fault management \\
+          L4 & Guided agent & Pre-approved & Wide & Change management \\
+          \bottomrule
+          \end{tabularx}
+          \end{table*}
+        note: |
+          Five columns, so R4.1 selects the starred float on the column count
+          alone, before either width test is reached.
+  R5:
+    title: What is never emitted
+    items:
+      - R5.1: 'Longtable is never emitted. A two-column class has nowhere to put a page-breaking table: the result is a broken build rather than a wide one.'
+      - R5.2: A table too tall for a float page is not detected here. The author splits it, sets it as raw LaTeX, or moves it to an appendix the caller assembles.
+      - R5.3: 'Cuted''s strip environment and any other non-float spanning mechanism are forbidden: material inserted into the two-column flow without reserving space lands on top of the column text.'
+      - R5.4: Multi-row and multi-column cells are not supported. A pipe table cannot express them, and a table needing them is written as raw LaTeX (srd-7-passthrough).
+
+non_goals:
+  - "Reading the legacy convention where a one-column markdown table carries the caption for the table that follows it."
+  - "Guaranteeing that a table fits. The heuristics choose a layout; a table that overflows is an author's edit."
+  - "Column alignment from the pipe table's separator row. Every column is ragged-right; a table needing centred or right-aligned columns is written as raw LaTeX."
+  - "Sorting, filtering, or otherwise transforming rows."
+
+acceptance_criteria:
+  - id: AC1
+    criterion: A three-column table with a caption line renders as a float whose caption precedes the tabularx and whose label follows the caption, with plain caption and label commands and no counter stepping.
+    traces: [R2.1, R2.5]
+  - id: AC2
+    criterion: The weighting applied to a table whose columns hold short, medium, and long cells produces weights summing to the column count, each at or above its floor and at or below the clamp.
+    traces: [R3.3, R3.4, R3.5]
+  - id: AC3
+    criterion: A five-column table, a two-column table of 200-character cells, and a fifteen-row table of modest cells each select the starred environment; a small three-column table does not.
+    traces: [R4.1, R4.2, R4.5]
+  - id: AC4
+    criterion: A pipe table with no caption line, and a caption line with no identifier, each fail with an error naming the file and line.
+    traces: [R1.4, R1.5]
+  - id: AC5
+    criterion: No emitted table contains longtable, a strip environment, or a bold header row.
+    traces: [R2.4, R5.1, R5.3]
+  - id: AC6
+    criterion: A paragraph opening with the word Table and a colon that does not follow a table renders as an ordinary paragraph.
+    traces: [R1.3]
+  - id: AC7
+    criterion: Cells holding citations render the cite command, demonstrating that cell content takes the inline path.
+    traces: [R2.6]
