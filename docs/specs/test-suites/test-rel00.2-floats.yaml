@@ -20,73 +20,6 @@ preconditions:
   - The pipeline reader is available for the backport cases, which skip cleanly where it is not.
 
 test_cases:
-  - name: 'A table renders as a float whose caption precedes the tabularx'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC1: A three-column table with a caption line renders as a float whose
-      caption precedes the tabularx and whose label follows the caption, with
-      plain caption and label commands and no counter stepping.
-    traces:
-      - srd005-tables AC1
-  - name: 'Column weights sum to the column count, each within its floor and clamp'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC2: The weighting applied to a table whose columns hold short, medium,
-      and long cells produces weights summing to the column count, each at or
-      above its floor and at or below the clamp.
-    traces:
-      - srd005-tables AC2
-  - name: 'The two-column decision follows the column count, the widest cell, and the estimated height'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC3: A five-column table, a two-column table of 200-character cells, and
-      a fifteen-row table of modest cells each select the starred environment;
-      a small three-column table does not.
-    traces:
-      - srd005-tables AC3
-  - name: 'A table with no caption line, and a caption line with no identifier, each fail'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC4: A pipe table with no caption line, and a caption line with no
-      identifier, each fail with an error naming the file and line.
-    traces:
-      - srd005-tables AC4
-  - name: 'No emitted table carries longtable, a strip environment, or a bold header row'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC5: No emitted table contains longtable, a strip environment, or a bold
-      header row.
-    traces:
-      - srd005-tables AC5
-  - name: 'A Table paragraph that follows no table renders as ordinary prose'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC6: A paragraph opening with the word Table and a colon that does not
-      follow a table renders as an ordinary paragraph.
-    traces:
-      - srd005-tables AC6
-  - name: 'Cells holding citations render the cite command'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC7: Cells holding citations render the cite command, demonstrating that
-      cell content takes the inline path.
-    traces:
-      - srd005-tables AC7
-  - name: 'A table with nothing to measure falls back to equal-width columns'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC8: A table whose cells offer nothing to measure falls back to equal-
-      width columns rather than failing.
-    traces:
-      - srd005-tables AC8
   - name: 'Every emitted construct reads back with its caption, paragraph, and cell text as prose'
     use_case: rel00.2-uc001-floats-in-two-columns
     status: planned
@@ -255,3 +188,176 @@ test_cases:
     traces:
       - srd004-figures R2.4
       - srd004-figures AC5
+  - name: 'including the column specification its weighting produces'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableRendersTheSRDExample
+    status: done
+    description: |
+      TestTableRendersTheSRDExample covers srd005-tables R1.1, R1.2, R2.1, R2.2,
+      R2.3, R2.5, R2.7, R3.6, and AC1 with the first example the SRD states,
+      byte for byte -- including the column specification its weighting
+      produces.
+    traces:
+      - srd005-tables R1.1
+      - srd005-tables R1.2
+      - srd005-tables R2.1
+      - srd005-tables R2.2
+      - srd005-tables R2.3
+      - srd005-tables R2.5
+      - srd005-tables R2.7
+      - srd005-tables R3.6
+      - srd005-tables AC1
+  - name: 'five columns select the starred float on the column count alone'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestWideTableRendersTheSRDExample
+    status: done
+    description: |
+      TestWideTableRendersTheSRDExample covers srd005-tables R4.1, R4.5, and AC3
+      with the second example: five columns select the starred float on the
+      column count alone.
+    traces:
+      - srd005-tables R4.1
+      - srd005-tables R4.5
+      - srd005-tables AC3
+  - name: 'whatever the damping, the floors, and the clamp do to a column, the weights are rescaled to sum to the column count, whi'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestColumnWeightsSumToTheColumnCount
+    status: done
+    description: |
+      TestColumnWeightsSumToTheColumnCount covers srd005-tables R3.1, R3.2,
+      R3.3, R3.5, and AC2: whatever the damping, the floors, and the clamp do to
+      a column, the weights are rescaled to sum to the column count, which is
+      what tabularx requires of an hsize specification. The floors and the clamp
+      are steps rather than invariants of the result: the rescale that restores
+      the sum can carry a floored column back under its floor, which is what the
+      reference filter does and what the SRD's own worked examples show.
+    traces:
+      - srd005-tables R3.1
+      - srd005-tables R3.2
+      - srd005-tables R3.3
+      - srd005-tables R3.5
+      - srd005-tables AC2
+  - name: 'the weighting follows the cell contents, damped so ten times the text does not take ten times the measure'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestLongerColumnsTakeMoreWidth
+    status: done
+    description: |
+      TestLongerColumnsTakeMoreWidth covers srd005-tables R3.1 and R3.2: the
+      weighting follows the cell contents, damped so ten times the text does not
+      take ten times the measure.
+    traces:
+      - srd005-tables R3.1
+      - srd005-tables R3.2
+  - name: 'a column is floored at the width its longest unbreakable word needs, because a narrower one overflows the rule. The same'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestAnUnbreakableWordWidensItsColumn
+    status: done
+    description: |
+      TestAnUnbreakableWordWidensItsColumn covers srd005-tables R3.4: a column
+      is floored at the width its longest unbreakable word needs, because a
+      narrower one overflows the rule. The same table with that word broken up
+      weighs the column lower.
+    traces:
+      - srd005-tables R3.4
+  - name: 'word length is measured after removing LaTeX control sequences and braces, so a citation does not widen a column by the '
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestControlSequencesDoNotCountAsWordLength
+    status: done
+    description: |
+      TestControlSequencesDoNotCountAsWordLength covers srd005-tables R3.4: word
+      length is measured after removing LaTeX control sequences and braces, so a
+      citation does not widen a column by the length of its command.
+    traces:
+      - srd005-tables R3.4
+  - name: 'the width bar and the height bar each span a table the column count alone would leave in one column'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestWideDecisionReadsMoreThanTheColumnCount
+    status: done
+    description: |
+      TestWideDecisionReadsMoreThanTheColumnCount covers srd005-tables R4.1,
+      R4.2, R4.3, R4.4, and AC3: the width bar and the height bar each span a
+      table the column count alone would leave in one column.
+    traces:
+      - srd005-tables R4.1
+      - srd005-tables R4.2
+      - srd005-tables R4.3
+      - srd005-tables R4.4
+      - srd005-tables AC3
+  - name: 'a cell escapes and renders citations and emphasis as a paragraph does'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableCellsTakeTheInlinePath
+    status: done
+    description: |
+      TestTableCellsTakeTheInlinePath covers srd005-tables R2.6 and AC7: a cell
+      escapes and renders citations and emphasis as a paragraph does.
+    traces:
+      - srd005-tables R2.6
+      - srd005-tables AC7
+  - name: 'a caption carrying emphasis or a citation renders them'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableCaptionTakesTheInlinePath
+    status: done
+    description: |
+      TestTableCaptionTakesTheInlinePath covers srd005-tables R2.1 and
+      srd009-backport-compatibility R2.4: a caption carrying emphasis or a
+      citation renders them.
+    traces:
+      - srd005-tables R2.1
+      - srd009-backport-compatibility R2.4
+  - name: 'the default is one step below the body, and a caller asking for body size gets no command'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableFontSizeIsConfigurable
+    status: done
+    description: |
+      TestTableFontSizeIsConfigurable covers srd005-tables R2.7: the default is
+      one step below the body, and a caller asking for body size gets no
+      command.
+    traces:
+      - srd005-tables R2.7
+  - name: 'each failure names the table and its line'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableErrors
+    status: done
+    description: |
+      TestTableErrors covers srd005-tables R1.3, R1.4, R1.5, R5.4, and AC4: each
+      failure names the table and its line.
+    traces:
+      - srd005-tables R1.3
+      - srd005-tables R1.4
+      - srd005-tables R1.5
+      - srd005-tables R5.4
+      - srd005-tables AC4
+  - name: 'a paragraph opening with the caption prefix that follows no table is prose'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestCaptionParagraphElsewhereIsProse
+    status: done
+    description: |
+      TestCaptionParagraphElsewhereIsProse covers srd005-tables R1.3 and AC6: a
+      paragraph opening with the caption prefix that follows no table is prose.
+    traces:
+      - srd005-tables R1.3
+      - srd005-tables AC6
+  - name: 'a table with nothing to measure takes equal-width columns rather than failing'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestEmptyWeightingFallsBack
+    status: done
+    description: |
+      TestEmptyWeightingFallsBack covers srd005-tables R3.7 and AC8: a table
+      with nothing to measure takes equal-width columns rather than failing.
+    traces:
+      - srd005-tables R3.7
+      - srd005-tables AC8
+  - name: 'no longtable, no strip, no bold header, and nothing between the float and its caption'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableEmitsNoForbiddenForm
+    status: done
+    description: |
+      TestTableEmitsNoForbiddenForm covers srd005-tables R2.4, R5.1, R5.2, R5.3,
+      and AC5: no longtable, no strip, no bold header, and nothing between the
+      float and its caption.
+    traces:
+      - srd005-tables R2.4
+      - srd005-tables R5.1
+      - srd005-tables R5.2
+      - srd005-tables R5.3
+      - srd005-tables AC5

@@ -11,3 +11,9 @@ import (
 func asUnknownKey(err error, target **cite.UnknownKeyError) bool {
 	return errors.As(err, target)
 }
+
+// asRenderError unwraps a conversion error, so a failure inside a rendered
+// fragment can be reported at the position of the block that holds it.
+func asRenderError(err error, target **Error) bool {
+	return errors.As(err, target)
+}

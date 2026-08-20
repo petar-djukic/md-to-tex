@@ -29,6 +29,20 @@ type Config struct {
 	// Citations is the set of keys a citation may name. A nil set turns
 	// validation off; an empty set holds no valid key (srd006-citations R3.2).
 	Citations cite.KeySet
+
+	// TableSize is the font size command a table float carries. A nil value
+	// takes the default one step below the body; a pointer to an empty string
+	// emits none, which is how a caller asks for body-size tables
+	// (srd005-tables R2.7).
+	TableSize *string
+}
+
+// TableFontSize is the size command a table float carries.
+func (c Config) TableFontSize() string {
+	if c.TableSize == nil {
+		return tableFontSize
+	}
+	return *c.TableSize
 }
 
 // Label is one identifier the fragment carries, with the heading it came from
@@ -158,11 +172,33 @@ func firstContentAfter(source []byte, offset int) int {
 }
 
 // blocks renders every child of node in order.
+//
+// A table looks ahead by one block, because its caption line is the paragraph
+// that follows it (srd005-tables R1.1).
 func (w *walker) blocks(node ast.Node) error {
-	for child := node.FirstChild(); child != nil; child = child.NextSibling() {
-		if err := w.block(child); err != nil {
+	for child := node.FirstChild(); child != nil; {
+		next := child.NextSibling()
+
+		table, isTable := child.(*east.Table)
+		if !isTable {
+			if err := w.block(child); err != nil {
+				return err
+			}
+			child = next
+			continue
+		}
+
+		caption, consumed, err := w.captionFor(w.offsetOf(table), next)
+		if err != nil {
 			return err
 		}
+		if err := w.table(table, caption); err != nil {
+			return err
+		}
+		if consumed {
+			next = next.NextSibling()
+		}
+		child = next
 	}
 	return nil
 }
@@ -193,8 +229,6 @@ func (w *walker) block(node ast.Node) error {
 		return w.htmlBlock(typed)
 	case *ast.ThematicBreak:
 		return w.fail(w.offsetOf(typed), "thematic break", "no mapping; write it as raw LaTeX")
-	case *east.Table:
-		return w.fail(w.offsetOf(typed), "table", "tables render from rel00.2 (srd005-tables)")
 	}
 	return w.fail(w.offsetOf(node), node.Kind().String(), "no mapping for this construct")
 }

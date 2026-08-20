@@ -139,7 +139,7 @@ acceptance_criteria:
     criterion: A three-column table with a caption line renders as a float whose caption precedes the tabularx and whose label follows the caption, with plain caption and label commands and no counter stepping.
     traces: [R1.1, R1.2, R2.1, R2.2, R2.3, R2.5, R2.7]
   - id: AC2
-    criterion: The weighting applied to a table whose columns hold short, medium, and long cells produces weights summing to the column count, each at or above its floor and at or below the clamp.
+    criterion: 'The weighting applied to a table whose columns hold short, medium, and long cells produces weights that follow the cell lengths, damped, and that sum to the column count. The floor and the clamp are steps rather than properties of the result: R3.5 rescales after clamping, and that rescale can carry a floored column back under its floor.'
     traces: [R3.1, R3.2, R3.3, R3.4, R3.5, R3.6]
   - id: AC3
     criterion: A five-column table, a two-column table of 200-character cells, and a fifteen-row table of modest cells each select the starred environment; a small three-column table does not.
