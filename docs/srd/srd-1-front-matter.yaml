@@ -1,0 +1,137 @@
+id: srd-1-front-matter
+title: Front-matter Renderer
+
+problem: |
+  A paper's title page is metadata with destinations, not prose with a flow.
+  The title belongs in a title command, the author in an author command, the
+  abstract in an abstract environment, and whatever else the page carries — a
+  keywords block, typically — belongs after them. Converted as a chapter it
+  comes out as body text under a heading, which is what the retired build did
+  and what the pipeline had to work around.
+
+  The authors write the page two ways. One states the abstract as a YAML
+  frontmatter field, which is pandoc's convention. The other marks it in the
+  body with a bold-italic run so the retired build would not number it as a
+  section. Both are in the manuscripts, so both are read. The author field is
+  written either as a scalar or as a list of names, and carries a mailto link
+  the LaTeX has to render as an address rather than pass through as markdown.
+
+goals:
+  - G1: Decode a title page's YAML frontmatter into typed fields
+  - G2: Take the abstract from either of the two places the manuscripts put it
+  - G3: Render the title, author, and abstract blocks IEEEtran expects
+  - G4: Emit the remaining body after those blocks, converted rather than escaped
+  - G5: Do all of it by template and escaping, with no pandoc in the path
+
+requirements:
+  R1:
+    title: Title-page decoding
+    items:
+      - R1.1: The renderer must accept a byte slice whose first bytes are a YAML frontmatter block delimited by a line of three hyphens, and must return an error naming the file when no such block opens the input.
+      - R1.2: The frontmatter must decode into the fields title (string), subtitle (string), date (string), author, and abstract (string). Unknown fields are ignored, not an error, because the manuscripts carry Obsidian fields such as tags that LaTeX has no use for.
+      - R1.3: The frontmatter must parse strictly with respect to duplicate mapping keys - a page declaring title twice is an error, not a silent last-wins.
+      - R1.4: An empty or absent title is an error naming the file. Every other field may be absent.
+      - R1.5: The author field must decode from either a scalar or a sequence of strings. A sequence joins with the separator the word and surrounded by single spaces, which is what LaTeX expects between authors.
+      - R1.6: When the frontmatter states a non-empty abstract field, that field is the abstract and everything below the frontmatter is the body.
+      - R1.7: When the frontmatter states no abstract, the body is scanned for an abstract marker - a line holding only the word Abstract wrapped in two or three asterisks on each side. Text after that marker is the abstract and the body is empty. With neither a field nor a marker, the whole body is the abstract.
+  R2:
+    title: Title block
+    items:
+      - R2.1: 'The title block must emit a title command whose argument is the escaped title, then an author command when the author is non-empty, then a maketitle command, each on its own line and in that order.'
+      - R2.2: 'A non-empty subtitle must join the title inside the same title command, separated by a LaTeX line break followed by a large size command. IEEEtran provides no subtitle command, and a second title line lands in the author block.'
+      - R2.3: The date must be decoded and must not be emitted. IEEEtran's title block has no date slot; a caller who needs one writes it into the preamble.
+      - R2.4: Title and subtitle text must pass through the escaper (srd-3-escaping) before substitution into the template. The template performs no escaping of its own.
+    examples:
+      - markdown: |
+          ---
+          title: Converting Markdown to IEEEtran
+          subtitle: A Library for Paper Pipelines
+          author: Petar Djukic
+          ---
+        latex: |
+          \title{Converting Markdown to IEEEtran\\ \large A Library for Paper Pipelines}
+          \author{Petar Djukic}
+          \maketitle
+  R3:
+    title: Author field
+    items:
+      - R3.1: An author written as a markdown link whose target is a mailto address must render as the escaped name, a LaTeX line break, and the escaped address wrapped in a monospace command.
+      - R3.2: The link is removed from the name before escaping, and surrounding whitespace is trimmed, so the name does not carry the bracket syntax.
+      - R3.3: An author carrying no mailto link renders as the escaped name alone.
+      - R3.4: An author list joined under R1.5 renders as one escaped string; a mailto link inside a list entry is treated as R3.1 treats it.
+    examples:
+      - markdown: |
+          ---
+          title: A Paper
+          author: Petar Djukic [petar.djukic@example.com](mailto:petar.djukic@example.com)
+          ---
+        latex: |
+          \title{A Paper}
+          \author{Petar Djukic\\ \texttt{petar.djukic@example.com}}
+          \maketitle
+  R4:
+    title: Abstract and body
+    items:
+      - R4.1: A non-empty abstract must render as an abstract environment whose content is the abstract markdown converted through the chapter path (srd-2-renderer-core), not escaped. The abstract carries the paper's own emphasis and terminology.
+      - R4.2: An empty abstract emits no abstract environment at all, not an empty one.
+      - R4.3: The body remaining after the abstract is accounted for must be converted through the chapter path and emitted after the abstract environment, so a raw-LaTeX keywords block survives as written (srd-7-passthrough).
+      - R4.4: 'The output order is fixed: title block, abstract environment, body. Each block is separated from the next by a single newline, and the fragment ends with exactly one newline.'
+      - R4.5: The fragment carries no preamble and no document environment. The container inputs it (srd-8-container).
+    examples:
+      - markdown: |
+          ---
+          title: Autogenic Systems
+          author: Petar Djukic
+          abstract: |
+            Advances in code-generating AI are moving software toward
+            systems that evolve themselves.
+          ---
+
+          ```{=latex}
+          \begin{IEEEkeywords}
+          Autogenic systems, LLM agents.
+          \end{IEEEkeywords}
+          ```
+        latex: |
+          \title{Autogenic Systems}
+          \author{Petar Djukic}
+          \maketitle
+          \begin{abstract}
+          Advances in code-generating AI are moving software toward
+          systems that evolve themselves.
+          \end{abstract}
+          \begin{IEEEkeywords}
+          Autogenic systems, LLM agents.
+          \end{IEEEkeywords}
+  R5:
+    title: Correspondence with the reference implementation
+    items:
+      - R5.1: The decoding rules R1.1 through R1.7 and the block rules R2 through R3 must reproduce the behavior of paperkit's frontmatter.go, which is the implementation the manuscripts are written against.
+      - R5.2: 'The renderer differs from that reference in one respect and must do so knowingly: the abstract and the body convert through this library''s chapter path rather than through pandoc. Output that differs from pandoc''s for the same input is a defect in the chapter path, not a licence for this component to keep a pandoc dependency.'
+      - R5.3: 'The reference decodes an acknowledgments file into an unnumbered section with its own heading dropped. That behavior stays in the caller: this component renders a title page and nothing else.'
+
+non_goals:
+  - "Reading files. The caller supplies the bytes and the name used in error messages."
+  - "Rendering the acknowledgments section, which is the caller's."
+  - "Emitting a preamble, a document class, or a bibliography (srd-8-container)."
+  - "Deciding where the fragment is written or whether it overwrites an existing file."
+
+acceptance_criteria:
+  - id: AC1
+    criterion: A title page whose abstract is a frontmatter field and whose body is a raw-LaTeX keywords block renders the abstract environment before the keywords block, with the keywords block unescaped.
+    traces: [R1.6, R4.1, R4.3, R4.4]
+  - id: AC2
+    criterion: A title page whose abstract is marked in the body with a bold-italic run renders the same abstract environment, and the marker itself does not appear in the output.
+    traces: [R1.7, R4.1]
+  - id: AC3
+    criterion: An author written with a mailto link renders as a name and a monospace address separated by a line break, with no bracket syntax surviving.
+    traces: [R3.1, R3.2]
+  - id: AC4
+    criterion: A subtitle appears inside the title command after a line break and a large size command, and no subtitle command is emitted.
+    traces: [R2.2]
+  - id: AC5
+    criterion: A page with a duplicate frontmatter key, and a page with no title, each fail with an error naming the file.
+    traces: [R1.3, R1.4]
+  - id: AC6
+    criterion: The title-page fixtures in paperkit's frontmatter_test.go produce the same title, author, and abstract content through this renderer.
+    traces: [R5.1, R5.2]

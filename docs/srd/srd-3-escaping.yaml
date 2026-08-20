@@ -1,0 +1,81 @@
+id: srd-3-escaping
+title: Escaper
+
+problem: |
+  Ten characters that occur in ordinary prose are markup in LaTeX. An ampersand
+  in a name, a percent sign in a measurement, an underscore in an identifier -
+  each either ends the run, comments out the rest of the line, or fails the
+  compile with a message pointing somewhere else. Every text node the renderer
+  emits has to be protected, and the protection has to happen in exactly one
+  place, because a second implementation drifts from the first and the drift
+  shows up as a compilation failure in a paper nobody is reading yet.
+
+  The opposite failure is over-escaping. Corpus titles carry Greek, accented
+  names, dashes, and quotation marks that a Unicode-aware engine sets as
+  written. Transliterating them into accent commands assumes an eight-bit
+  engine the pipeline does not use, and it mangles the names it claims to
+  protect.
+
+goals:
+  - G1: Escape the ten characters LaTeX treats as markup, and only those
+  - G2: Pass every other character through unchanged, Unicode included
+  - G3: Serve the template path and the node-renderer path with one function
+  - G4: Stay a pure function, with no options, no state, and no knowledge of context
+
+requirements:
+  R1:
+    title: The escaped characters
+    items:
+      - R1.1: 'The escaper must replace exactly these ten characters, each with the replacement given: backslash with textbackslash followed by an empty group; ampersand, percent, dollar, hash, underscore, opening brace, and closing brace each with the same character preceded by a backslash; tilde with textasciitilde followed by an empty group; caret with textasciicircum followed by an empty group.'
+      - R1.2: 'Replacement is a single pass: output already written is never rescanned, so the backslashes the replacements introduce are not themselves escaped. A backslash in the input yields the textbackslash command and nothing further.'
+      - R1.3: The escaper must replace no other character. Any addition to R1.1 is a change to this SRD.
+    examples:
+      - markdown: |
+          100% of the R&D budget, item_one, and $x$ in {braces}
+        latex: |
+          100\% of the R\&D budget, item\_one, and \$x\$ in \{braces\}
+      - markdown: |
+          A backslash \ and a tilde ~ and a caret ^
+        latex: |
+          A backslash \textbackslash{} and a tilde \textasciitilde{} and a caret \textasciicircum{}
+  R2:
+    title: Unicode
+    items:
+      - R2.1: Characters outside the ten must pass through byte for byte. Accented Latin, Greek, mathematical symbols, dashes, and typographic quotation marks are emitted as written.
+      - R2.2: 'The escaper assumes the venue build runs a Unicode-aware engine, which the consuming pipeline satisfies by compiling with xelatex. That assumption is stated here because it is the reason R2.1 is safe: under an eight-bit engine the same output fails to compile.'
+      - R2.3: The escaper must not normalize, transliterate, or reorder anything. It is not a text-processing stage.
+    examples:
+      - markdown: |
+          Bianchi's model of 802.11 uses lambda and mu -- see Figure 1.
+        latex: |
+          Bianchi's model of 802.11 uses lambda and mu -- see Figure 1.
+  R3:
+    title: Shape and use
+    items:
+      - R3.1: The escaper must be a pure function from a string to a string, with no options argument, no error return, and no dependence on where its output lands.
+      - R3.2: The front-matter templates (srd-1-front-matter) and the node renderers (srd-2-renderer-core) must call this same function. A second escaping implementation anywhere in the library is a defect.
+      - R3.3: Escaping happens before substitution into a template, never inside one. Templates perform no escaping of their own.
+      - R3.4: Content declared raw by srd-7-passthrough must never reach the escaper, and content that reaches the escaper is never subsequently treated as raw.
+
+non_goals:
+  - "Escaping for LaTeX contexts with their own rules, such as verbatim, listings, or URLs. Those constructs pass their content through unescaped from their own renderers."
+  - "Transliterating Unicode into accent or symbol commands."
+  - "Detecting or repairing LaTeX the author wrote by hand."
+  - "Line wrapping, whitespace normalization, or any other reformatting."
+
+acceptance_criteria:
+  - id: AC1
+    criterion: A string containing all ten special characters escapes to the exact output in the R1 examples, and no other character in that string changes.
+    traces: [R1.1, R1.3]
+  - id: AC2
+    criterion: A string containing a backslash escapes once; the textbackslash command in the output is not itself escaped.
+    traces: [R1.2]
+  - id: AC3
+    criterion: A string of Greek letters, accented names, en dashes, and curly quotation marks passes through byte for byte.
+    traces: [R2.1, R2.3]
+  - id: AC4
+    criterion: The escaper's output for the title and author fixtures matches paperkit's escapeLaTeX for the same inputs.
+    traces: [R1.1, R3.2]
+  - id: AC5
+    criterion: A grep over the library finds exactly one implementation of the replacement table.
+    traces: [R3.2]
