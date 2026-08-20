@@ -20,18 +20,6 @@ preconditions:
   - The pipeline reader is available for the backport cases, which skip cleanly where it is not.
 
 test_cases:
-  - name: 'Options carries the graphics path and the float width thresholds the float renderers read'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC12: Options carries the citation key set, the graphics path, and the
-      float width thresholds, and a caller constructs it without the library
-      reading any configuration file. The citation key set is proven by the
-      text core; the other two fields arrive with the float renderers, which
-      is why docs/road-map.yaml records srd002-renderer-core R2.2 as deferred
-      to this release.
-    traces:
-      - srd002-renderer-core AC12
   - name: 'srd004-figures R1.1, R1.2, R2.1, R2.2, R2.3, R4.1, and AC1 with the example the SRD states, byte for byte'
     use_case: rel00.2-uc001-floats-in-two-columns
     go_test: TestFigureRendersTheSRDExample
@@ -245,6 +233,17 @@ test_cases:
     traces:
       - srd005-tables R2.6
       - srd005-tables AC7
+  - name: 'a caption carrying emphasis or a citation renders them'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableCaptionTakesTheInlinePath
+    status: done
+    description: |
+      TestTableCaptionTakesTheInlinePath covers srd005-tables R2.1 and
+      srd009-backport-compatibility R2.4: a caption carrying emphasis or a
+      citation renders them.
+    traces:
+      - srd005-tables R2.1
+      - srd009-backport-compatibility R2.4
   - name: 'the default is one step below the body, and a caller asking for body size gets no command'
     use_case: rel00.2-uc001-floats-in-two-columns
     go_test: TestTableFontSizeIsConfigurable
@@ -494,3 +493,14 @@ test_cases:
       is invisible without the explanation.
     traces:
       - srd009-backport-compatibility R1.2
+  - name: 'Options carries the citation key set, the graphics path, and the float width thresholds'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestOptionsCarryTheContainerFields
+    status: done
+    description: |
+      AC12: Options carries the citation key set, the graphics path, and the
+      float width thresholds, and a caller constructs it without the library
+      reading any configuration file. The container fields arrived with
+      rel00.3, which is where this is proven.
+    traces:
+      - srd002-renderer-core AC12

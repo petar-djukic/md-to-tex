@@ -12,11 +12,11 @@ overview: |
   than against a convention in a comment.
 
   The suite is the source of requirement coverage for this release. A
-  requirement no case names is uncovered, and two are uncovered by
-  construction: srd002-renderer-core R2.2 names the graphics path and float
-  thresholds that arrive with rel00.2, and srd003-escaping R3.3 names the
-  front-matter templates that arrive with rel00.3. Both are recorded as
-  deferred in docs/road-map.yaml.
+  requirement no case names is uncovered. Two were, when this suite was
+  written: srd002-renderer-core R2.2 named the graphics path and the float
+  thresholds, and srd003-escaping R3.3 named the front-matter templates.
+  Neither existed yet. Both are covered now, by the suites for the releases
+  that brought their subjects.
 
 traces:
   - rel00.1-uc001-prose-chapter-to-fragment

@@ -3,8 +3,7 @@
 # Two readers share this file. The specification-critic reads the shared corpus
 # fields -- version, name, status, and use_cases -- and the repository's own
 # release-to-SRD edge check reads units, which the shared schema has no place
-# for. The gate and deferred_requirements are ours as well. Each reader ignores
-# what belongs to the other.
+# for. The gate is ours as well. Each reader ignores what belongs to the other.
 #
 # Releases order the nine SRDs so each release ships something the consuming
 # pipeline can adopt on its own. The cut follows the dependency edges in the
@@ -46,17 +45,6 @@ releases:
       - srd006-citations
       - srd007-passthrough
     gate: 'none (opens implementation). Converts a prose chapter end to end: headings with derived labels and the collision check over label reports, paragraphs through the escaper, citations, and raw LaTeX passthrough. A chapter carrying a figure or table errors as an unmapped construct until rel00.2 lands.'
-    deferred_requirements:
-      # Two requirements of this release's SRDs describe subjects a later
-      # release introduces, so no test here can name them honestly. They are
-      # named by the release that brings their subject rather than left to
-      # look like an oversight.
-      - id: srd002-renderer-core R2.2
-        covered_by: rel00.2
-        reason: 'Names the graphics path and the float width thresholds Options must carry. The citation key set it also names is implemented and tested; the other two fields arrive with srd004-figures and srd005-tables.'
-      - id: srd003-escaping R3.3
-        covered_by: rel00.3
-        reason: 'States that escaping happens before substitution into a template and that templates escape nothing. The front-matter templates are srd001-front-matter, which lands in rel00.3.'
 
   - id: rel00.2
     version: "00.2"
@@ -77,9 +65,9 @@ releases:
     use_cases:
       - id: rel00.3-uc001-compilable-document
         summary: The fragments assemble into a document that compiles.
-        status: planned
+        status: done
     name: Document shell
-    status: pending
+    status: complete
     units:
       - srd001-front-matter
       - srd008-container

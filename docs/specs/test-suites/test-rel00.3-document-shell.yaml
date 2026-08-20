@@ -19,163 +19,345 @@ preconditions:
   - 'The front-matter renderer and the container generator are implemented: srd001-front-matter and srd008-container.'
 
 test_cases:
-  - name: 'A frontmatter abstract renders before a raw-LaTeX keywords body'
+  - name: 'the fields the manuscripts state, with unknown fields ignored rather than rejected because Obsidian carries its own'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestReadDecodesTheMetadata
+    status: done
     description: |
-      AC1: A title page whose abstract is a frontmatter field and whose body
-      is a raw-LaTeX keywords block renders the abstract environment before
-      the keywords block, with the keywords block unescaped.
+      TestReadDecodesTheMetadata covers srd001-front-matter R1.1 and R1.2: the
+      fields the manuscripts state, with unknown fields ignored rather than
+      rejected because Obsidian carries its own.
     traces:
+      - srd001-front-matter R1.1
+      - srd001-front-matter R1.2
+  - name: 'a frontmatter field wins, a marked body run works, and the marker itself does not survive. Both fixtures are paperkit''s '
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestReadTakesTheAbstractFromEitherPlace
+    status: done
+    description: |
+      TestReadTakesTheAbstractFromEitherPlace covers srd001-front-matter R1.6,
+      R1.7, R5.1, AC1, AC2, and AC6: a frontmatter field wins, a marked body run
+      works, and the marker itself does not survive. Both fixtures are
+      paperkit's own, from frontmatter_test.go, because R5.1 holds this decoding
+      to the behavior the manuscripts are written against.
+    traces:
+      - srd001-front-matter R1.6
+      - srd001-front-matter R1.7
+      - srd001-front-matter R5.1
       - srd001-front-matter AC1
-  - name: 'An abstract marked in the body renders the same, without its marker'
-    use_case: rel00.3-uc001-compilable-document
-    status: planned
-    description: |
-      AC2: A title page whose abstract is marked in the body with a bold-
-      italic run renders the same abstract environment, and the marker itself
-      does not appear in the output.
-    traces:
       - srd001-front-matter AC2
-  - name: 'An author with a mailto link renders as a name and a monospace address'
-    use_case: rel00.3-uc001-compilable-document
-    status: planned
-    description: |
-      AC3: An author written with a mailto link renders as a name and a
-      monospace address separated by a line break, with no bracket syntax
-      surviving.
-    traces:
-      - srd001-front-matter AC3
-  - name: 'A subtitle joins the title rather than taking a command of its own'
-    use_case: rel00.3-uc001-compilable-document
-    status: planned
-    description: |
-      AC4: A subtitle appears inside the title command after a line break and
-      a large size command, and no subtitle command is emitted.
-    traces:
-      - srd001-front-matter AC4
-  - name: 'A duplicate frontmatter key and a missing title each fail naming the file'
-    use_case: rel00.3-uc001-compilable-document
-    status: planned
-    description: |
-      AC5: A page with a duplicate frontmatter key, and a page with no title,
-      each fail with an error naming the file.
-    traces:
-      - srd001-front-matter AC5
-  - name: 'The paperkit fixtures produce the same title, author, and abstract'
-    use_case: rel00.3-uc001-compilable-document
-    status: planned
-    description: |
-      AC6: The title-page fixtures in paperkit's frontmatter_test.go produce
-      the same title, author, and abstract content through this renderer.
-    traces:
       - srd001-front-matter AC6
-  - name: 'An author as a plain name and as a list both render as one escaped string'
+  - name: 'a scalar and a list both decode, the list joining with the word and'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestReadDecodesTheAuthorEitherWay
+    status: done
     description: |
-      AC7: An author written as a plain name renders as the escaped name
-      alone, and an author written as a list joins with the word and before
-      rendering as one escaped string.
+      TestReadDecodesTheAuthorEitherWay covers srd001-front-matter R1.5 and AC7:
+      a scalar and a list both decode, the list joining with the word and.
     traces:
+      - srd001-front-matter R1.5
       - srd001-front-matter AC7
-  - name: 'A date is decoded and no date command is emitted'
+  - name: 'a page with no frontmatter, a duplicate key, and a missing title each fail naming the file'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestReadErrors
+    status: done
     description: |
-      AC8: A page stating a date decodes it and emits no date command, because
-      IEEEtran has no slot for one.
+      TestReadErrors covers srd001-front-matter R1.1, R1.3, R1.4, and AC5: a
+      page with no frontmatter, a duplicate key, and a missing title each fail
+      naming the file.
     traces:
-      - srd001-front-matter AC8
-  - name: 'A title carrying specials is escaped before substitution, not inside the template'
+      - srd001-front-matter R1.1
+      - srd001-front-matter R1.3
+      - srd001-front-matter R1.4
+      - srd001-front-matter AC5
+  - name: 'srd001-front-matter R2.1, R2.2, R2.4, and AC4 with the example the SRD states'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestTitleBlockRendersTheSRDExample
+    status: done
     description: |
-      AC9: A title carrying LaTeX special characters appears escaped inside
-      the title command, demonstrating that the escaping happened before
-      substitution rather than inside the template.
+      TestTitleBlockRendersTheSRDExample covers srd001-front-matter R2.1, R2.2,
+      R2.4, and AC4 with the example the SRD states.
     traces:
+      - srd001-front-matter R2.1
+      - srd001-front-matter R2.2
+      - srd001-front-matter R2.4
+      - srd001-front-matter AC4
+  - name: 'srd001-front-matter R3.1, R3.2, and AC3 with the example the SRD states'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestAuthorFieldRendersTheSRDExample
+    status: done
+    description: |
+      TestAuthorFieldRendersTheSRDExample covers srd001-front-matter R3.1, R3.2,
+      and AC3 with the example the SRD states.
+    traces:
+      - srd001-front-matter R3.1
+      - srd001-front-matter R3.2
+      - srd001-front-matter AC3
+  - name: 'a plain name renders alone, and a list with a link inside is treated as R3.1 treats it'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestAuthorFieldWithoutALink
+    status: done
+    description: |
+      TestAuthorFieldWithoutALink covers srd001-front-matter R3.3 and R3.4: a
+      plain name renders alone, and a list with a link inside is treated as R3.1
+      treats it.
+    traces:
+      - srd001-front-matter R3.3
+      - srd001-front-matter R3.4
+  - name: 'the author command is emitted only when there is an author'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestTitleBlockOmitsTheAuthorCommand
+    status: done
+    description: |
+      TestTitleBlockOmitsTheAuthorCommand covers srd001-front-matter R2.1: the
+      author command is emitted only when there is an author.
+    traces:
+      - srd001-front-matter R2.1
+  - name: 'the fields are escaped before they reach the template, and the template escapes nothing of its own'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestMetadataIsEscapedBeforeSubstitution
+    status: done
+    description: |
+      TestMetadataIsEscapedBeforeSubstitution covers srd001-front-matter R2.4,
+      AC9, and srd003-escaping R3.3: the fields are escaped before they reach
+      the template, and the template escapes nothing of its own.
+    traces:
+      - srd001-front-matter R2.4
+      - srd003-escaping R3.3
       - srd001-front-matter AC9
-  - name: 'A page with no abstract emits no abstract environment'
+  - name: 'srd001-front-matter R2.3 and AC8'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestDateIsDecodedAndNotEmitted
+    status: done
     description: |
-      AC10: A page with no abstract emits no abstract environment at all,
-      rather than an empty one.
+      TestDateIsDecodedAndNotEmitted covers srd001-front-matter R2.3 and AC8.
     traces:
-      - srd001-front-matter AC10
-  - name: 'Rendering a title page emits no acknowledgment section'
+      - srd001-front-matter R2.3
+      - srd001-front-matter AC8
+  - name: 'the reference also renders an acknowledgments file, and that stays with the caller. This component renders a title page '
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestTitlePageRendersNothingElse
+    status: done
     description: |
-      AC11: Rendering a title page emits no acknowledgment section, and the
-      component exposes no entry point for one.
+      TestTitlePageRendersNothingElse covers srd001-front-matter R5.3 and AC11:
+      the reference also renders an acknowledgments file, and that stays with
+      the caller. This component renders a title page and nothing else.
     traces:
+      - srd001-front-matter R5.3
       - srd001-front-matter AC11
-  - name: 'A three-chapter roster produces the container in roster order'
+  - name: 'the abstract environment before the keywords block, and the keywords unescaped'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestRenderFrontMatterRendersTheSRDExample
+    status: done
     description: |
-      AC1: A three-chapter roster produces the container in the R1 example, in
-      that order, with one input line per chapter and no extension on any
-      input argument.
+      TestRenderFrontMatterRendersTheSRDExample covers srd001-front-matter R4.1,
+      R4.3, R4.4, R4.5, and AC1 with the example the SRD states: the abstract
+      environment before the keywords block, and the keywords unescaped.
     traces:
+      - srd001-front-matter R4.1
+      - srd001-front-matter R4.3
+      - srd001-front-matter R4.4
+      - srd001-front-matter R4.5
+      - srd001-front-matter AC1
+  - name: 'the abstract converts rather than escaping, so the paper''s own emphasis and citations survive. This is the one knowing d'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestAbstractTakesTheChapterPath
+    status: done
+    description: |
+      TestAbstractTakesTheChapterPath covers srd001-front-matter R4.1 and R5.2:
+      the abstract converts rather than escaping, so the paper's own emphasis
+      and citations survive. This is the one knowing difference from paperkit,
+      which converts the abstract through pandoc.
+    traces:
+      - srd001-front-matter R4.1
+      - srd001-front-matter R5.2
+  - name: 'srd001-front-matter R4.2 and AC10'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestNoAbstractEmitsNoEnvironment
+    status: done
+    description: |
+      TestNoAbstractEmitsNoEnvironment covers srd001-front-matter R4.2 and AC10.
+    traces:
+      - srd001-front-matter R4.2
+      - srd001-front-matter AC10
+  - name: 'the fixed order, one newline at the end, and no preamble'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestFrontMatterFragmentShape
+    status: done
+    description: |
+      TestFrontMatterFragmentShape covers srd001-front-matter R4.4 and R4.5: the
+      fixed order, one newline at the end, and no preamble.
+    traces:
+      - srd001-front-matter R4.4
+      - srd001-front-matter R4.5
+  - name: 'a body carrying an unmapped construct fails rather than emitting a fragment with a hole in it'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestFrontMatterReportsAFailedConversion
+    status: done
+    description: |
+      TestFrontMatterReportsAFailedConversion covers srd001-front-matter R4.1
+      and R4.3: a body carrying an unmapped construct fails rather than emitting
+      a fragment with a hole in it.
+    traces:
+      - srd001-front-matter R4.1
+      - srd001-front-matter R4.3
+  - name: 'the abstract goes through the chapter path, so a key outside the caller''s corpus fails there too'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestFrontMatterCitationsValidate
+    status: done
+    description: |
+      TestFrontMatterCitationsValidate covers srd001-front-matter R4.1 with
+      srd006-citations R3.1: the abstract goes through the chapter path, so a
+      key outside the caller's corpus fails there too.
+    traces:
+      - srd001-front-matter R4.1
+      - srd006-citations R3.1
+  - name: 'srd008-container R1.1, R1.2, R1.3, R1.4, R1.5, R2.1, R2.2, R2.3, and AC1 with the roster the SRD states, byte for byte'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestGenerateRendersTheSRDExample
+    status: done
+    description: |
+      TestGenerateRendersTheSRDExample covers srd008-container R1.1, R1.2, R1.3,
+      R1.4, R1.5, R2.1, R2.2, R2.3, and AC1 with the roster the SRD states, byte
+      for byte.
+    traces:
+      - srd008-container R1.1
+      - srd008-container R1.2
+      - srd008-container R1.3
+      - srd008-container R1.4
+      - srd008-container R1.5
+      - srd008-container R2.1
+      - srd008-container R2.2
+      - srd008-container R2.3
       - srd008-container AC1
-  - name: 'The front-matter chapter is input on the same terms as every other'
+  - name: 'the front matter takes an input line on the same terms as every other chapter'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestFrontMatterIsNotSpecialCased
+    status: done
     description: |
-      AC2: The front-matter chapter appears in the input list on the same
-      terms as every other chapter, with no special case in the generator.
+      TestFrontMatterIsNotSpecialCased covers srd008-container R2.2 and AC2: the
+      front matter takes an input line on the same terms as every other chapter.
     traces:
+      - srd008-container R2.2
       - srd008-container AC2
-  - name: 'An empty roster and a duplicate base name each fail naming the problem'
+  - name: 'the markdown extension is removed, no extension is added, and a directory prefix is dropped'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestInputArgumentsCarryNoExtension
+    status: done
     description: |
-      AC3: An empty roster, and a roster with two chapters sharing a base
-      name, each fail with an error naming the problem.
+      TestInputArgumentsCarryNoExtension covers srd008-container R2.1 and R2.3:
+      the markdown extension is removed, no extension is added, and a directory
+      prefix is dropped.
     traces:
+      - srd008-container R2.1
+      - srd008-container R2.3
+  - name: 'an empty roster and a base-name collision each fail naming the problem'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestRosterErrors
+    status: done
+    description: |
+      TestRosterErrors covers srd008-container R2.4, R2.5, and AC3: an empty
+      roster and a base-name collision each fail naming the problem.
+    traces:
+      - srd008-container R2.4
+      - srd008-container R2.5
       - srd008-container AC3
-  - name: 'Generating twice yields byte-identical output and writes no file'
+  - name: 'the same roster produces the same bytes, and nothing is written'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestGenerationIsDeterministic
+    status: done
     description: |
-      AC4: Generating twice from the same roster yields byte-identical output,
-      and the generator writes no file.
+      TestGenerationIsDeterministic covers srd008-container R3.1, R3.2, and AC4:
+      the same roster produces the same bytes, and nothing is written.
     traces:
+      - srd008-container R3.1
+      - srd008-container R3.2
       - srd008-container AC4
-  - name: 'The container carries no section, float, or prose'
+  - name: 'nothing but the input list depends on the roster, so no chapter edit can require a regeneration'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestOnlyTheInputListFollowsTheRoster
+    status: done
     description: |
-      AC5: The container contains no section, no float, and no prose - every
+      TestOnlyTheInputListFollowsTheRoster covers srd008-container R3.3: nothing
+      but the input list depends on the roster, so no chapter edit can require a
+      regeneration.
+    traces:
+      - srd008-container R3.3
+  - name: 'the container includes the preamble by reference, so an author''s adjustment lives in a file the generator only names'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestPreambleIsNamedNotCarried
+    status: done
+    description: |
+      TestPreambleIsNamedNotCarried covers srd008-container R1.3, R3.4, and AC7:
+      the container includes the preamble by reference, so an author's
+      adjustment lives in a file the generator only names.
+    traces:
+      - srd008-container R1.3
+      - srd008-container R3.4
+      - srd008-container AC7
+  - name: 'srd008-container R1.2 and R1.5, and srd002-renderer-core R2.2, which leaves these fields to this SRD'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestOptionsCarryTheContainerFields
+    status: done
+    description: |
+      TestOptionsCarryTheContainerFields covers srd008-container R1.2 and R1.5,
+      and srd002-renderer-core R2.2, which leaves these fields to this SRD.
+    traces:
+      - srd002-renderer-core R2.2
+      - srd008-container R1.2
+      - srd008-container R1.5
+  - name: 'every line is a declaration, an input, or an environment delimiter'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestContainerHoldsNoContent
+    status: done
+    description: |
+      TestContainerHoldsNoContent covers srd008-container R1.6 and AC5: every
       line is a declaration, an input, or an environment delimiter.
     traces:
+      - srd008-container R1.6
       - srd008-container AC5
-  - name: 'A figure included by base name resolves under the emitted graphics path'
+  - name: 'a figure included by base name is searched for in the directories the container names'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestGraphicsPathResolvesAFigure
+    status: done
     description: |
-      AC6: A figure included by base name resolves under the emitted graphics
-      path when the document is compiled from the tex directory.
+      TestGraphicsPathResolvesAFigure covers srd008-container R1.4 and AC6, with
+      srd004-figures R4.1: a figure included by base name is searched for in the
+      directories the container names.
     traces:
+      - srd004-figures R4.1
+      - srd008-container R1.4
       - srd008-container AC6
-  - name: 'An author edit to the preamble survives regeneration'
+  - name: 'a roster in, a document out, nothing written'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestGenerateContainerAssemblesTheDocument
+    status: done
     description: |
-      AC7: An author edit to the preamble file survives regeneration, because
-      the container names that file rather than carrying its contents.
+      TestGenerateContainerAssemblesTheDocument covers srd008-container R1.1,
+      R2.1, and R3.1 across the public surface: a roster in, a document out,
+      nothing written.
     traces:
-      - srd008-container AC7
+      - srd008-container R1.1
+      - srd008-container R2.1
+      - srd008-container R3.1
+  - name: 'the front-matter fragment carries no preamble, and the container inputs it by the name its chapter file states'
+    use_case: rel00.3-uc001-compilable-document
+    go_test: TestTheDocumentShellFitsTogether
+    status: done
+    description: |
+      TestTheDocumentShellFitsTogether covers srd001-front-matter R4.5 and
+      srd008-container R2.2: the front-matter fragment carries no preamble, and
+      the container inputs it by the name its chapter file states.
+    traces:
+      - srd001-front-matter R4.5
+      - srd008-container R2.2
   - name: 'A template renders a field escaped before substitution, and escapes nothing itself'
     use_case: rel00.3-uc001-compilable-document
-    status: planned
+    go_test: TestMetadataIsEscapedBeforeSubstitution
+    status: done
     description: |
       AC7: A template renders a field that was escaped before substitution,
       and the template itself escapes nothing. The front-matter templates are
-      the only templates in the library, which is why docs/road-map.yaml
-      records srd003-escaping R3.3 as deferred to this release.
+      the library's only templates, so this became testable with rel00.3.
     traces:
       - srd003-escaping AC7
