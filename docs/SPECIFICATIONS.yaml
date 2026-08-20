@@ -97,6 +97,6 @@ srd_index:
 coverage_notes: |
   Requirement coverage is the test-evidence audit's to report: the test suites
   under docs/specs/test-suites/ carry the claims and name the Go test behind
-  each. Two requirements are recorded in docs/road-map.yaml as deferred to the
-  release that introduces their subject, srd002-renderer-core R2.2 to rel00.2
-  and srd003-escaping R3.3 to rel00.3.
+  each. Every requirement the text core, the floats, and the document shell
+  state is covered; what remains uncovered belongs to rel01.0, which validates
+  the library against a whole paper rather than against fixtures.
