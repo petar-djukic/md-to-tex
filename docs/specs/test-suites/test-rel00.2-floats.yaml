@@ -20,50 +20,6 @@ preconditions:
   - The pipeline reader is available for the backport cases, which skip cleanly where it is not.
 
 test_cases:
-  - name: 'A figure renders as the float shape the manuscripts hand-write'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC1: An image block with alt text and an identifier renders byte-for-
-      byte as the R2 example, including the placement specifier and the
-      centering command.
-    traces:
-      - srd004-figures AC1
-  - name: 'The wide class and the width attribute select the environment and the measure'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC2: The wide class produces the starred environment at text width, and
-      a width attribute scales the include against the correct measure in each
-      case.
-    traces:
-      - srd004-figures AC2
-  - name: 'The figure file name survives the crossing, directory dropped and extension kept'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC3: A figure referenced in markdown as a PDF under a directory is
-      included as the same file name with no directory and no extension
-      change.
-    traces:
-      - srd004-figures AC3
-  - name: 'A figure missing its alt text, identifier, or a sane width fails naming the file and line'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC4: An image with no alt text, an image with no identifier, a width of
-      zero, and a remote target each fail with an error naming the file and
-      line.
-    traces:
-      - srd004-figures AC4
-  - name: 'No emitted figure carries a wrapper between the float and its caption'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC5: No emitted figure contains an adjustbox environment or any wrapper
-      between the float and its caption.
-    traces:
-      - srd004-figures AC5
   - name: 'A table renders as a float whose caption precedes the tabularx'
     use_case: rel00.2-uc001-floats-in-two-columns
     status: planned
@@ -191,3 +147,111 @@ test_cases:
       to this release.
     traces:
       - srd002-renderer-core AC12
+  - name: 'srd004-figures R1.1, R1.2, R2.1, R2.2, R2.3, R4.1, and AC1 with the example the SRD states, byte for byte'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureRendersTheSRDExample
+    status: done
+    description: |
+      TestFigureRendersTheSRDExample covers srd004-figures R1.1, R1.2, R2.1,
+      R2.2, R2.3, R4.1, and AC1 with the example the SRD states, byte for byte.
+    traces:
+      - srd004-figures R1.1
+      - srd004-figures R1.2
+      - srd004-figures R2.1
+      - srd004-figures R2.2
+      - srd004-figures R2.3
+      - srd004-figures R4.1
+      - srd004-figures AC1
+  - name: 'srd004-figures R3.1 and AC2 with the second example the SRD states'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestWideFigureSpansBothColumns
+    status: done
+    description: |
+      TestWideFigureSpansBothColumns covers srd004-figures R3.1 and AC2 with the
+      second example the SRD states.
+    traces:
+      - srd004-figures R3.1
+      - srd004-figures AC2
+  - name: 'srd004-figures R3.2, R3.4, and AC2 with the third example, plus the two-column measure'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureWidthScalesTheEnclosingMeasure
+    status: done
+    description: |
+      TestFigureWidthScalesTheEnclosingMeasure covers srd004-figures R3.2, R3.4,
+      and AC2 with the third example, plus the two-column measure.
+    traces:
+      - srd004-figures R3.2
+      - srd004-figures R3.4
+      - srd004-figures AC2
+  - name: 'the directory is dropped because the container supplies a graphics path, and the extension is never rewritten'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureKeepsItsFileName
+    status: done
+    description: |
+      TestFigureKeepsItsFileName covers srd004-figures R4.1, R4.2, and AC3: the
+      directory is dropped because the container supplies a graphics path, and
+      the extension is never rewritten.
+    traces:
+      - srd004-figures R4.1
+      - srd004-figures R4.2
+      - srd004-figures AC3
+  - name: 'the caption escapes and renders inline constructs as a paragraph does'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureCaptionTakesTheInlinePath
+    status: done
+    description: |
+      TestFigureCaptionTakesTheInlinePath covers srd004-figures R2.2: the
+      caption escapes and renders inline constructs as a paragraph does.
+    traces:
+      - srd004-figures R2.2
+  - name: 'identifiers are not normalized, slugged, or prefixed'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureIdentifierIsEmittedVerbatim
+    status: done
+    description: |
+      TestFigureIdentifierIsEmittedVerbatim covers srd004-figures R2.3:
+      identifiers are not normalized, slugged, or prefixed.
+    traces:
+      - srd004-figures R2.3
+  - name: 'each failure names the construct and its line rather than emitting a float nobody can reference'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureErrors
+    status: done
+    description: |
+      TestFigureErrors covers srd004-figures R1.3, R1.4, R3.3, R4.4, and AC4:
+      each failure names the construct and its line rather than emitting a float
+      nobody can reference.
+    traces:
+      - srd004-figures R1.3
+      - srd004-figures R1.4
+      - srd004-figures R3.3
+      - srd004-figures R4.4
+      - srd004-figures AC4
+  - name: 'an image with other content beside it is inline, and inline images have no mapping'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestInlineImageIsNotAFloat
+    status: done
+    description: |
+      TestInlineImageIsNotAFloat covers srd004-figures R1.1: an image with other
+      content beside it is inline, and inline images have no mapping.
+    traces:
+      - srd004-figures R1.1
+  - name: 'the renderer does not check that the figure exists, because conversion opens no file'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureReadsNoFile
+    status: done
+    description: |
+      TestFigureReadsNoFile covers srd004-figures R4.3: the renderer does not
+      check that the figure exists, because conversion opens no file.
+    traces:
+      - srd004-figures R4.3
+  - name: 'no adjustbox, and nothing between the float and its caption'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureEmitsNoWrapper
+    status: done
+    description: |
+      TestFigureEmitsNoWrapper covers srd004-figures R2.4 and AC5: no adjustbox,
+      and nothing between the float and its caption.
+    traces:
+      - srd004-figures R2.4
+      - srd004-figures AC5

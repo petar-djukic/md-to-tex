@@ -245,7 +245,13 @@ func headingIdentifier(node *ast.Heading, heading string) (string, bool) {
 
 // paragraph renders inline content followed by a blank line
 // (srd002-renderer-core R4.1).
+//
+// A paragraph holding one image and nothing else is a figure rather than
+// prose, and takes the float path (srd004-figures R1.1).
 func (w *walker) paragraph(node *ast.Paragraph) error {
+	if image, attributes, ok := figureOf(node, w.source); ok {
+		return w.figure(node, image, attributes)
+	}
 	if err := w.inlines(node); err != nil {
 		return err
 	}

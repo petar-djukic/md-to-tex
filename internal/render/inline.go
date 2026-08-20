@@ -55,7 +55,8 @@ func (w *walker) inline(builder *strings.Builder, node ast.Node) error {
 	case *ast.RawHTML:
 		return w.rawHTML(typed)
 	case *ast.Image:
-		return w.fail(w.offsetOf(typed), "image", "figures render from rel00.2 (srd004-figures)")
+		return w.fail(w.offsetOf(typed), "inline image",
+			"an image beside other content is not a float; put it in a paragraph of its own (srd004-figures R1.1)")
 	}
 	return w.fail(w.offsetOf(node), node.Kind().String(), "no mapping for this construct")
 }
