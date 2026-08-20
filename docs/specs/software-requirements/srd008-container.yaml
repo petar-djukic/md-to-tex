@@ -78,7 +78,7 @@ non_goals:
 acceptance_criteria:
   - id: AC1
     criterion: A three-chapter roster produces the container in the R1 example, in that order, with one input line per chapter and no extension on any input argument.
-    traces: [R1.1, R2.1, R2.2]
+    traces: [R1.1, R1.2, R1.3, R1.5, R2.1, R2.2, R2.3]
   - id: AC2
     criterion: The front-matter chapter appears in the input list on the same terms as every other chapter, with no special case in the generator.
     traces: [R2.2]
@@ -87,13 +87,16 @@ acceptance_criteria:
     traces: [R2.4, R2.5]
   - id: AC4
     criterion: Generating twice from the same roster yields byte-identical output, and the generator writes no file.
-    traces: [R3.1, R3.2]
+    traces: [R3.1, R3.2, R3.3]
   - id: AC5
     criterion: The container contains no section, no float, and no prose - every line is a declaration, an input, or an environment delimiter.
     traces: [R1.6]
   - id: AC6
     criterion: A figure included by base name resolves under the emitted graphics path when the document is compiled from the tex directory.
     traces: [R1.4]
+  - id: AC7
+    criterion: An author edit to the preamble file survives regeneration, because the container names that file rather than carrying its contents.
+    traces: [R3.4]
 
 depends_on:
   - srd_id: srd001-front-matter

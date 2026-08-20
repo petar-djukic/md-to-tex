@@ -72,10 +72,19 @@ acceptance_criteria:
     traces: [R1.2]
   - id: AC3
     criterion: A string of Greek letters, accented names, en dashes, and curly quotation marks passes through byte for byte.
-    traces: [R2.1, R2.3]
+    traces: [R2.1, R2.2, R2.3]
   - id: AC4
     criterion: The escaper's output for the title and author fixtures matches paperkit's escapeLaTeX for the same inputs.
     traces: [R1.1, R3.2]
   - id: AC5
     criterion: A grep over the library finds exactly one implementation of the replacement table.
     traces: [R3.2]
+  - id: AC6
+    criterion: The escaper is a function from a string to a string with no options argument and no error return, so it cannot behave one way for a title and another for a paragraph.
+    traces: [R3.1]
+  - id: AC7
+    criterion: A template renders a field that was escaped before substitution, and the template itself escapes nothing.
+    traces: [R3.3]
+  - id: AC8
+    criterion: Content declared raw reaches the fragment unescaped while the prose beside it escapes, so no run is both raw and escaped.
+    traces: [R3.4]

@@ -119,7 +119,7 @@ non_goals:
 acceptance_criteria:
   - id: AC1
     criterion: A title page whose abstract is a frontmatter field and whose body is a raw-LaTeX keywords block renders the abstract environment before the keywords block, with the keywords block unescaped.
-    traces: [R1.6, R4.1, R4.3, R4.4]
+    traces: [R1.1, R1.2, R1.6, R2.1, R4.1, R4.3, R4.4, R4.5]
   - id: AC2
     criterion: A title page whose abstract is marked in the body with a bold-italic run renders the same abstract environment, and the marker itself does not appear in the output.
     traces: [R1.7, R4.1]
@@ -135,6 +135,21 @@ acceptance_criteria:
   - id: AC6
     criterion: The title-page fixtures in paperkit's frontmatter_test.go produce the same title, author, and abstract content through this renderer.
     traces: [R5.1, R5.2]
+  - id: AC7
+    criterion: An author written as a plain name renders as the escaped name alone, and an author written as a list joins with the word and before rendering as one escaped string.
+    traces: [R1.5, R3.3, R3.4]
+  - id: AC8
+    criterion: A page stating a date decodes it and emits no date command, because IEEEtran has no slot for one.
+    traces: [R2.3]
+  - id: AC9
+    criterion: A title carrying LaTeX special characters appears escaped inside the title command, demonstrating that the escaping happened before substitution rather than inside the template.
+    traces: [R2.4]
+  - id: AC10
+    criterion: A page with no abstract emits no abstract environment at all, rather than an empty one.
+    traces: [R4.2]
+  - id: AC11
+    criterion: Rendering a title page emits no acknowledgment section, and the component exposes no entry point for one.
+    traces: [R5.3]
 
 depends_on:
   - srd_id: srd002-renderer-core

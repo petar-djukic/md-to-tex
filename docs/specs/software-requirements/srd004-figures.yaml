@@ -89,13 +89,13 @@ non_goals:
 acceptance_criteria:
   - id: AC1
     criterion: An image block with alt text and an identifier renders byte-for-byte as the R2 example, including the placement specifier and the centering command.
-    traces: [R1.1, R2.1, R2.2, R2.3]
+    traces: [R1.1, R1.2, R2.1, R2.2, R2.3]
   - id: AC2
     criterion: The wide class produces the starred environment at text width, and a width attribute scales the include against the correct measure in each case.
-    traces: [R3.1, R3.2]
+    traces: [R3.1, R3.2, R3.4]
   - id: AC3
     criterion: A figure referenced in markdown as a PDF under a directory is included as the same file name with no directory and no extension change.
-    traces: [R4.1, R4.2]
+    traces: [R4.1, R4.2, R4.3]
   - id: AC4
     criterion: An image with no alt text, an image with no identifier, a width of zero, and a remote target each fail with an error naming the file and line.
     traces: [R1.3, R1.4, R3.3, R4.4]

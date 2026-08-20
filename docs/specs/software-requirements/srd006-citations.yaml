@@ -68,16 +68,16 @@ non_goals:
 acceptance_criteria:
   - id: AC1
     criterion: A single-key citation and a three-key grouped citation render as the R2 examples, keys comma-joined with no spaces.
-    traces: [R1.1, R2.1]
+    traces: [R1.1, R1.3, R1.4, R2.1, R2.2]
   - id: AC2
     criterion: A key absent from the supplied set fails with an error naming the key, the file, and the line, and no fragment is returned.
     traces: [R3.1, R3.4]
   - id: AC3
     criterion: With no key set in Options, the same document converts without error; with an empty set, it fails.
-    traces: [R3.2]
+    traces: [R3.2, R3.3]
   - id: AC4
     criterion: A markdown link, an unterminated bracketed run, an at sign in inline code, and a cite command inside a raw-LaTeX block all render unchanged, none of them producing a citation node.
-    traces: [R4.1, R4.2, R4.3, R4.4]
+    traces: [R4.1, R4.2, R4.3, R4.4, R4.5]
   - id: AC5
     criterion: A citation in a table cell and a citation in a figure caption both render the cite command.
     traces: [R2.3]

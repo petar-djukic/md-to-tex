@@ -122,7 +122,7 @@ non_goals:
 acceptance_criteria:
   - id: AC1
     criterion: A chapter of headings, paragraphs, emphasis, lists, quotes, and code converts to a fragment that compiles under IEEEtran with no preamble of its own.
-    traces: [R1.4, R3.1, R4.1, R5.1, R5.3, R5.4]
+    traces: [R1.4, R3.1, R3.7, R4.1, R4.2, R4.3, R5.1, R5.2, R5.3, R5.4, R5.5]
   - id: AC2
     criterion: Converting the same chapter twice yields byte-identical output, and conversion touches no file.
     traces: [R1.1, R1.2]
@@ -137,7 +137,7 @@ acceptance_criteria:
     traces: [R3.5, R3.6]
   - id: AC8
     criterion: Two chapters whose headings derive the same identifier are reported by the collision check, naming both chapters and the heading text behind each, before the document is compiled.
-    traces: [R7.1, R7.3]
+    traces: [R7.1, R7.3, R7.5]
   - id: AC9
     criterion: The collision check runs against reports held in memory, touching no file, and returns collisions rather than an error.
     traces: [R7.4, R7.6]
@@ -149,7 +149,31 @@ acceptance_criteria:
     traces: [R4.1, R6.2]
   - id: AC6
     criterion: A zero Options value converts a chapter with no citations and no floats without error.
-    traces: [R2.3]
+    traces: [R2.1, R2.3]
+  - id: AC11
+    criterion: A fragment ends with exactly one newline and does not begin with a blank line, whatever blank lines the source carried.
+    traces: [R1.5]
+  - id: AC12
+    criterion: Options carries the citation key set, the graphics path, and the float width thresholds, and a caller constructs it without the library reading any configuration file.
+    traces: [R2.2]
+  - id: AC13
+    criterion: A heading carrying emphasis and LaTeX special characters renders them as a paragraph would, escaped and marked up.
+    traces: [R3.3]
+  - id: AC14
+    criterion: A soft line break keeps the source line structure and a hard line break emits a LaTeX line break, so a backported edit diffs by line.
+    traces: [R4.4]
+  - id: AC15
+    criterion: A link whose text equals its target renders as a url command, and any other link renders as an href command carrying the target and the rendered text.
+    traces: [R4.5]
+  - id: AC16
+    criterion: A citation renders through the citation component and a figure or table is dispatched to its own, with the core neither duplicating nor overriding what they emit.
+    traces: [R6.1]
+  - id: AC17
+    criterion: A construct outside the mapping fails, and the same content written as raw LaTeX converts, so an author proceeds without waiting for the mapping to widen.
+    traces: [R6.5]
+  - id: AC18
+    criterion: A successful conversion returns the fragment and its label report together, and a failed one returns neither.
+    traces: [R7.2]
 
 depends_on:
   - srd_id: srd003-escaping

@@ -79,22 +79,31 @@ non_goals:
 acceptance_criteria:
   - id: AC1
     criterion: A fenced raw-LaTeX block emits its content byte for byte, without the fence or the info string, and its braces and backslashes are unescaped.
-    traces: [R1.1, R1.2]
+    traces: [R1.1, R1.2, R1.3]
   - id: AC2
     criterion: An inline reference command with a braced argument passes through unchanged, and the surrounding prose escapes normally in the same paragraph.
-    traces: [R2.1, R2.4, R3.1]
+    traces: [R2.1, R2.4, R3.1, R4.1]
   - id: AC3
     criterion: A control sequence whose argument contains nested braces survives whole; one with an unbalanced brace fails with an error naming the command and line.
     traces: [R2.2, R2.3]
   - id: AC4
     criterion: A citation-shaped run inside a raw block does not become a cite command, and a figure-shaped image inside a raw block does not become a float.
-    traces: [R1.5, R4.2]
+    traces: [R1.5, R3.3, R4.2, R4.4]
   - id: AC5
     criterion: A backslash before a space, a digit, or a punctuation character escapes rather than passing through raw.
     traces: [R3.1]
   - id: AC6
     criterion: A fenced block whose info string names a programming language renders as verbatim, not as raw LaTeX.
     traces: [R1.4]
+  - id: AC7
+    criterion: A backslash inside inline code or a code block is emitted by the code renderer, neither passed through raw nor escaped by the prose path, and a hard line break is not read as a control sequence.
+    traces: [R3.2, R3.4]
+  - id: AC8
+    criterion: A control sequence the library has never heard of passes through unchanged, so recognition is textual and LaTeX is left to report an undefined command.
+    traces: [R3.5]
+  - id: AC9
+    criterion: A construct outside the mapping fails while the same content written as raw LaTeX converts, which is the route around the mapping this component exists to provide.
+    traces: [R4.3]
 
 depends_on:
   - srd_id: srd002-renderer-core
