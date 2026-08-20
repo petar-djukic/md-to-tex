@@ -1,0 +1,112 @@
+# Copyright (c) 2026 Petar Djukic. All rights reserved. SPDX-License-Identifier: MIT
+
+id: rel00.1-uc001-prose-chapter-to-fragment
+title: A Prose Chapter Converts to a LaTeX Fragment
+
+summary: |
+  A paper pipeline holds a chapter of Obsidian-native markdown -- headings,
+  paragraphs, emphasis, lists, quotations, citations, and the raw LaTeX an
+  author wrote where the mapping does not reach -- and needs the IEEEtran
+  fragment its container document inputs. It calls the library with the source
+  bytes, the chapter name, and the citation keys its reference corpus holds,
+  and receives the fragment or an error naming the line that stopped it.
+
+  This is the conversion the whole library exists for. A chapter carrying a
+  figure or a table is out of scope here: those constructs are reported as
+  unmapped until the float renderers land in rel00.2.
+
+actor: The paper pipeline, converting one chapter as part of a build.
+
+trigger: |
+  The pipeline builds the paper and reaches a chapter whose LaTeX fragment is
+  absent or older than its markdown source.
+
+preconditions:
+  - The caller holds the chapter source in memory; the library opens no file.
+  - The caller holds the set of citation keys its reference corpus defines, or passes none to convert without key validation.
+  - The chapter carries no figure and no table.
+
+flow:
+  - id: F1
+    text: The pipeline calls the conversion with the source bytes, the chapter name for error messages, and its options.
+  - id: F2
+    text: Headings become sectioning commands, each carrying the identifier the author stated or the slug derived from its text, so a cross-reference written elsewhere resolves.
+  - id: F3
+    text: Paragraph text reaches the fragment through the escaper, with the ten LaTeX special characters protected and Unicode passed through as written.
+  - id: F4
+    text: Citations render as cite commands, and a key outside the caller's set stops the conversion with the key and the line.
+  - id: F5
+    text: Raw LaTeX the author wrote -- an inline reference command, a fenced block -- reaches the fragment untouched.
+  - id: F6
+    text: The pipeline receives the fragment, which carries no preamble and no document environment, and writes it beside the other chapter fragments.
+
+touchpoints:
+  - id: T1
+    target: srd002-renderer-core R1 AC1 AC2 -- Conversion is a single call over bytes that opens no file, is deterministic, and returns a fragment carrying no preamble.
+    reason: Flow F1 and F6 are that call and its result.
+  - id: T2
+    target: srd002-renderer-core R3 R4 R5 AC1 AC7 -- Headings, paragraphs, inline constructs, lists, and quotations render as the mapping states, with stated or derived labels.
+    reason: Flow F2 and F3 are the block and inline mapping this use case exercises.
+  - id: T3
+    target: srd003-escaping R1 R2 AC1 AC3 -- The ten specials escape in a single pass and Unicode passes through untouched.
+    reason: Flow F3 is what the escaper protects, and over-escaping would mangle the corpus names the chapters carry.
+  - id: T4
+    target: srd006-citations R1 R2 R3 AC1 AC2 -- The bracketed syntax parses, renders as a cite command, and fails on a key the caller's corpus does not hold.
+    reason: Flow F4 is the citation path end to end, including the failure the author has to see.
+  - id: T5
+    target: srd007-passthrough R1 R2 AC1 AC2 -- Fenced raw-LaTeX blocks and inline control sequences reach the fragment unescaped.
+    reason: Flow F5 is the route around the mapping, which is what keeps the mapping bounded to what the manuscripts use.
+  - id: T6
+    target: srd002-renderer-core R6 AC3 -- A construct outside the mapping is a positioned error rather than a silent omission.
+    reason: A chapter carrying a figure or table is the precondition this use case excludes, and the error is how the caller learns that rather than losing content.
+
+success_criteria:
+  - id: S1
+    criterion: A chapter of headings, paragraphs, emphasis, inline code, lists, and quotations converts to a fragment that compiles under IEEEtran with no preamble of its own.
+    traces:
+      - srd002-renderer-core R1.4
+      - srd002-renderer-core R3.1
+      - srd002-renderer-core R4.1
+      - srd002-renderer-core R5.1
+      - srd002-renderer-core AC1
+  - id: S2
+    criterion: A heading with no stated identifier emits the label its text slugs to, so a reference written against the pandoc-derived slug resolves.
+    traces:
+      - srd002-renderer-core R3.5
+      - srd002-renderer-core AC7
+  - id: S3
+    criterion: Prose carrying the ten LaTeX special characters comes out escaped, and Greek, accented names, and typographic punctuation come out as written.
+    traces:
+      - srd003-escaping R1.1
+      - srd003-escaping R2.1
+      - srd003-escaping AC1
+      - srd003-escaping AC3
+  - id: S4
+    criterion: A grouped citation renders one cite command with the keys comma-joined, and a key outside the caller's set stops the conversion naming the key and the line.
+    traces:
+      - srd006-citations R2.1
+      - srd006-citations R3.1
+      - srd006-citations AC1
+      - srd006-citations AC2
+  - id: S5
+    criterion: An inline control sequence and a fenced raw-LaTeX block reach the fragment byte for byte, while the prose beside them escapes.
+    traces:
+      - srd007-passthrough R1.1
+      - srd007-passthrough R2.1
+      - srd007-passthrough AC1
+      - srd007-passthrough AC2
+  - id: S6
+    criterion: A chapter carrying a figure or a table returns an error naming the construct and its line, and no fragment comes back with it.
+    traces:
+      - srd002-renderer-core R1.3
+      - srd002-renderer-core R6.4
+      - srd002-renderer-core AC3
+
+out_of_scope:
+  - Figures and tables, which the float renderers bring in rel00.2.
+  - The title page, which has its own path and lands with rel00.3.
+  - The container document that inputs the fragment, which lands with rel00.3.
+  - Compiling the fragment, which stays with the calling pipeline.
+
+test_suite_trace: test-rel00.1-text-core
+status: specified

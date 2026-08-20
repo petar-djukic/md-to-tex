@@ -31,6 +31,13 @@ releases:
 
   - id: rel00.1
     version: "00.1"
+    use_cases:
+      - id: rel00.1-uc001-prose-chapter-to-fragment
+        summary: A prose chapter converts to a LaTeX fragment.
+        status: done
+      - id: rel00.1-uc002-cross-chapter-label-collisions
+        summary: A pipeline finds the identifiers two chapters both claim.
+        status: done
     name: Text core
     status: complete
     units:
@@ -53,6 +60,10 @@ releases:
 
   - id: rel00.2
     version: "00.2"
+    use_cases:
+      - id: rel00.2-uc001-floats-in-two-columns
+        summary: Figures and tables written in native markdown render as floats.
+        status: planned
     name: Floats
     status: pending
     units:
@@ -63,6 +74,10 @@ releases:
 
   - id: rel00.3
     version: "00.3"
+    use_cases:
+      - id: rel00.3-uc001-compilable-document
+        summary: The fragments assemble into a document that compiles.
+        status: planned
     name: Document shell
     status: pending
     units:
