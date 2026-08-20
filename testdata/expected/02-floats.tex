@@ -1,0 +1,26 @@
+\section{Floats in two columns}\label{sec:floats}
+
+A float carries its caption once, and the \emph{emitted} form stays plain so an
+edit made in the LaTeX comes back as prose.
+
+\begin{table}[!t]
+\caption{What the float renderers map, and the markdown each construct is written as.}
+\label{tab:floats}
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{>{\hsize=0.605\hsize\raggedright\arraybackslash}X >{\hsize=1.096\hsize\raggedright\arraybackslash}X >{\hsize=1.299\hsize\raggedright\arraybackslash}X}
+\toprule
+Construct & Written as & Renders to \\
+\midrule
+Figure & an image block with an identifier & a figure float carrying caption and label \\
+Table & a pipe table and a caption line & a tabularx float at the measure its content needs \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{02-wide.pdf}
+\caption{A diagram spanning both columns.}
+\label{fig:wide}
+\end{figure*}

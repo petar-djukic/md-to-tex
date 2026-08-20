@@ -43,7 +43,7 @@ roadmap_summary:
       srd001-front-matter, srd008-container.
   - version: "01.0"
     name: Pipeline adoption
-    status: pending
+    status: done
     scope: |
       no requirement documents of its own.
 
@@ -97,6 +97,6 @@ srd_index:
 coverage_notes: |
   Requirement coverage is the test-evidence audit's to report: the test suites
   under docs/specs/test-suites/ carry the claims and name the Go test behind
-  each. Every requirement the text core, the floats, and the document shell
-  state is covered; what remains uncovered belongs to rel01.0, which validates
-  the library against a whole paper rather than against fixtures.
+  each. Every requirement in the corpus is covered, and mage audit gates that
+  from rel01.0 on: with every release but the last complete, a requirement no
+  test case names is a finding rather than a note.

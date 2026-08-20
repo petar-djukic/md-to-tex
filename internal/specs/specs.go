@@ -50,6 +50,7 @@ type Report struct {
 	SRDFiles int
 	Pointers int
 	Releases int
+	Coverage Coverage
 }
 
 // Err reports the findings as one error, or nil when there are none.
@@ -71,8 +72,14 @@ func (r Report) Err() error {
 // Summary is the one-line account of a run, for a human reading output rather
 // than a test failure.
 func (r Report) Summary() string {
-	return fmt.Sprintf("architecture: %d pointers; road map: %d releases over %d requirement documents\n",
-		r.Pointers, r.Releases, r.SRDFiles)
+	gate := "reported"
+	if r.Coverage.Gated {
+		gate = "gated"
+	}
+	return fmt.Sprintf("architecture: %d pointers; road map: %d releases over %d requirement documents\n"+
+		"coverage: %d of %d requirements named by a test case (%s)\n",
+		r.Pointers, r.Releases, r.SRDFiles,
+		r.Coverage.Covered, r.Coverage.Requirements, gate)
 }
 
 // architecture is the part of ARCHITECTURE.yaml this package reads. Components
@@ -93,8 +100,9 @@ type roadMap struct {
 }
 
 type release struct {
-	ID    string   `yaml:"id"`
-	Units []string `yaml:"units"`
+	ID     string   `yaml:"id"`
+	Status string   `yaml:"status"`
+	Units  []string `yaml:"units"`
 }
 
 // Check walks the release-to-SRD edge in both directions for the repository
@@ -161,6 +169,10 @@ func Check(root string) (Report, error) {
 					stem, strings.Join(releases, " and "))})
 		}
 	}
+
+	coverage, coverageFindings := checkCoverage(root, srdFiles, parsed.Releases)
+	report.Coverage = coverage
+	report.Findings = append(report.Findings, coverageFindings...)
 
 	sort.Slice(report.Findings, func(i, j int) bool {
 		if report.Findings[i].File != report.Findings[j].File {
