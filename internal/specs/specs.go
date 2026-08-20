@@ -115,11 +115,24 @@ type criterion struct {
 	Traces []string `yaml:"traces"`
 }
 
-// requirementReference matches the way a test names a requirement: the SRD id
-// and the requirement id adjacent, as in "srd-3-escaping R1.1". Go test names
-// cannot hold dots or hyphens, so in practice the reference sits in a comment
-// or in a table-driven case's name field.
-var requirementReference = regexp.MustCompile(`(srd-\d+-[a-z0-9-]+)[\s/_:-]+([Rr]\d+\.\d+)`)
+// requirementReference matches the way a test names requirements: the SRD id
+// followed by one or more requirement ids, as in "srd-3-escaping R1.1" or
+// "srd-3-escaping R2.1, R2.3, and R3.1". Go test names cannot hold dots or
+// hyphens, so in practice the reference sits in a comment or in a
+// table-driven case's name field.
+//
+// The list form is what a comment naturally says. Requiring the SRD id before
+// every id would have tests repeat it four times in a sentence, and a
+// convention nobody follows reports coverage nobody has.
+//
+// The separator admits the comment markers and line breaks a wrapped Go
+// comment puts between two ids, and nothing else: a word other than "and"
+// ends the run, so prose after the last id is not read as more of it.
+var requirementReference = regexp.MustCompile(
+	`(srd-\d+-[a-z0-9-]+)((?:(?:[\s,/:_-]|and\b)+[Rr]\d+\.\d+)+)`)
+
+// requirementID picks the individual ids out of the run that follows an SRD id.
+var requirementID = regexp.MustCompile(`[Rr]\d+\.\d+`)
 
 // checkerPackage is skipped by the coverage scan. This package's own tests
 // build documentation layers out of fixtures whose requirement ids exist only
@@ -434,13 +447,16 @@ func checkCoverage(root string, requirements map[string]bool) (map[string]bool, 
 			return err
 		}
 		for _, match := range requirementReference.FindAllSubmatch(data, -1) {
-			reference := string(match[1]) + " " + strings.ToUpper(string(match[2][:1])) + string(match[2][1:])
-			if requirements[reference] {
-				covered[reference] = true
-				continue
+			specification := string(match[1])
+			for _, id := range requirementID.FindAll(match[2], -1) {
+				reference := specification + " R" + string(id[1:])
+				if requirements[reference] {
+					covered[reference] = true
+					continue
+				}
+				findings = append(findings, Finding{relative(root, path),
+					fmt.Sprintf("names %s, which is not a requirement in the docs layer", reference)})
 			}
-			findings = append(findings, Finding{relative(root, path),
-				fmt.Sprintf("names %s, which is not a requirement in the docs layer", reference)})
 		}
 		return nil
 	})
