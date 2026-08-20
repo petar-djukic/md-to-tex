@@ -24,13 +24,24 @@ releases:
 
   - id: rel00.1
     name: Text core
-    status: pending
+    status: complete
     units:
       - srd-2-renderer-core
       - srd-3-escaping
       - srd-6-citations
       - srd-7-passthrough
     gate: 'none (opens implementation). Converts a prose chapter end to end: headings with derived labels and the collision check over label reports, paragraphs through the escaper, citations, and raw LaTeX passthrough. A chapter carrying a figure or table errors as an unmapped construct until rel00.2 lands.'
+    deferred_requirements:
+      # Two requirements of this release's SRDs describe subjects a later
+      # release introduces, so no test here can name them honestly. They are
+      # named by the release that brings their subject rather than left to
+      # look like an oversight.
+      - id: srd-2-renderer-core R2.2
+        covered_by: rel00.2
+        reason: 'Names the graphics path and the float width thresholds Options must carry. The citation key set it also names is implemented and tested; the other two fields arrive with srd-4-figures and srd-5-tables.'
+      - id: srd-3-escaping R3.3
+        covered_by: rel00.3
+        reason: 'States that escaping happens before substitution into a template and that templates escape nothing. The front-matter templates are srd-1-front-matter, which lands in rel00.3.'
 
   - id: rel00.2
     name: Floats

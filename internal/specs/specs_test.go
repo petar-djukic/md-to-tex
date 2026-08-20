@@ -167,6 +167,28 @@ func TestCheckReportsLayerProblems(t *testing.T) {
 			want: "criterion AC1 traces to R4.7, which is not a requirement here",
 		},
 		{
+			name: "test names several requirements of one specification",
+			build: func() layout {
+				l := valid()
+				l.tests = map[string]string{
+					"convert_test.go": "package convert\n\n// Covers srd-1-escaping R1.1, R1.2, and R9.9.\nfunc TestNothing() {}\n",
+				}
+				return l
+			},
+			want: "names srd-1-escaping R9.9, which is not a requirement in the docs layer",
+		},
+		{
+			name: "requirement ids wrapped across comment lines still count",
+			build: func() layout {
+				l := valid()
+				l.tests = map[string]string{
+					"convert_test.go": "package convert\n\n// Covers srd-1-escaping R1.1, R1.2, and\n// R9.9 across two lines.\nfunc TestNothing() {}\n",
+				}
+				return l
+			},
+			want: "names srd-1-escaping R9.9, which is not a requirement in the docs layer",
+		},
+		{
 			name: "test names a requirement that does not exist",
 			build: func() layout {
 				l := valid()
