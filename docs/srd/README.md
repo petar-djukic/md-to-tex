@@ -35,7 +35,12 @@ between the SRD and the code is a failing test rather than a discussion.
 ## How implementation traces back
 
 An implementation issue names the SRD it executes and the requirement ids it
-covers. Tests carry the same ids in their names or in a comment, so the audit
-can report which requirements no test mentions. A requirement that changes
-after implementation changes here first, and the issue that changes it says
-what it breaks.
+covers. Tests carry the same ids in their names or in a comment, written as the
+SRD id and the requirement id adjacent -- `srd-3-escaping R1.1` -- since a Go
+test name holds neither dots nor hyphens and a comment does. `mage audit` reads
+every test for those references and reports which requirements none of them
+names. A reference to a requirement that does not exist fails the audit, because
+a test claiming coverage it does not have is worse than one claiming none.
+
+A requirement that changes after implementation changes here first, and the
+issue that changes it says what it breaks.
