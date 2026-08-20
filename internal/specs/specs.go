@@ -1,10 +1,12 @@
 // Package specs checks the documentation layer for internal consistency.
 //
 // The layer is a graph: docs/ARCHITECTURE.yaml names one SRD per component and
-// interface, and each SRD carries requirements its acceptance criteria trace
-// to. Nothing enforces those edges but this package, so a pointer to a file
-// nobody wrote, a specification no component claims, or a criterion tracing to
-// a requirement that was renumbered all survive review by looking plausible.
+// interface, each SRD carries requirements its acceptance criteria trace to,
+// and docs/road-map.yaml assigns every SRD to a release. Nothing enforces
+// those edges but this package, so a pointer to a file nobody wrote, a
+// specification no component claims, a criterion tracing to a requirement
+// that was renumbered, or a component the roadmap never schedules all survive
+// review by looking plausible.
 //
 // The checks are ordinary functions returning a Report, so mage audit and
 // go test both run them and neither needs the other installed.
@@ -43,6 +45,7 @@ type Report struct {
 
 	SRDFiles     int
 	Pointers     int
+	Releases     int
 	Requirements int
 	Covered      int
 	Uncovered    []string
@@ -65,8 +68,8 @@ func (r Report) Err() error {
 // rather than a test failure.
 func (r Report) Summary() string {
 	var builder strings.Builder
-	fmt.Fprintf(&builder, "docs: %d SRDs, %d pointers, %d requirements\n",
-		r.SRDFiles, r.Pointers, r.Requirements)
+	fmt.Fprintf(&builder, "docs: %d SRDs, %d pointers, %d releases, %d requirements\n",
+		r.SRDFiles, r.Pointers, r.Releases, r.Requirements)
 	fmt.Fprintf(&builder, "coverage: %d of %d requirements referenced by a test\n",
 		r.Covered, r.Requirements)
 	for _, note := range r.Notes {
@@ -166,6 +169,10 @@ func Check(root string) (Report, error) {
 	report.Findings = append(report.Findings, findings...)
 	report.Pointers = len(pointers)
 	report.Findings = append(report.Findings, checkEdges(root, docs, pointers, srdFiles)...)
+
+	releases, findings := checkRoadMap(root, srdFiles)
+	report.Findings = append(report.Findings, findings...)
+	report.Releases = releases
 
 	requirementIDs := collect(specifications)
 	report.Requirements = len(requirementIDs)
@@ -276,6 +283,69 @@ func checkEdges(root, docs string, pointers map[string][]string, srdFiles []stri
 
 	sortFindings(findings)
 	return findings
+}
+
+// roadMap is the part of docs/road-map.yaml this package reads. A unit is an
+// SRD id, which is also the file stem under docs/srd.
+type roadMap struct {
+	Releases []release `yaml:"releases"`
+}
+
+type release struct {
+	ID    string   `yaml:"id"`
+	Units []string `yaml:"units"`
+}
+
+// checkRoadMap walks the release-to-SRD edge in both directions: a unit
+// naming no SRD on disk is scheduled work nobody specified, and an SRD no
+// release claims never gets scheduled. Exactly one release per SRD, because a
+// component in two releases has two chances to be called done and an
+// implementer following the roadmap cannot tell which one binds.
+func checkRoadMap(root string, srdFiles []string) (int, []Finding) {
+	path := filepath.Join(root, "docs", "road-map.yaml")
+	name := "docs/road-map.yaml"
+
+	if finding := parseStrict(path); finding != nil {
+		return 0, []Finding{*finding}
+	}
+	var parsed roadMap
+	if err := decodeFile(path, &parsed); err != nil {
+		return 0, []Finding{{name, err.Error()}}
+	}
+
+	stems := make(map[string]bool, len(srdFiles))
+	for _, file := range srdFiles {
+		stems[strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))] = true
+	}
+
+	var findings []Finding
+	assigned := make(map[string][]string)
+	for _, entry := range parsed.Releases {
+		for _, unit := range entry.Units {
+			if !stems[unit] {
+				findings = append(findings, Finding{name,
+					fmt.Sprintf("release %s names %s, which is not an SRD on disk", entry.ID, unit)})
+				continue
+			}
+			assigned[unit] = append(assigned[unit], entry.ID)
+		}
+	}
+	for stem := range stems {
+		switch releases := assigned[stem]; len(releases) {
+		case 1:
+		case 0:
+			findings = append(findings, Finding{name,
+				fmt.Sprintf("%s is assigned to no release", stem)})
+		default:
+			sort.Strings(releases)
+			findings = append(findings, Finding{name,
+				fmt.Sprintf("%s is assigned to %s; exactly one release owns an SRD",
+					stem, strings.Join(releases, " and "))})
+		}
+	}
+
+	sortFindings(findings)
+	return len(parsed.Releases), findings
 }
 
 // checkSRD holds one specification to its own shape: the id matches the file
