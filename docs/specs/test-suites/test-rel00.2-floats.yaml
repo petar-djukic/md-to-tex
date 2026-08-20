@@ -20,165 +20,6 @@ preconditions:
   - The pipeline reader is available for the backport cases, which skip cleanly where it is not.
 
 test_cases:
-  - name: 'A figure renders as the float shape the manuscripts hand-write'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC1: An image block with alt text and an identifier renders byte-for-
-      byte as the R2 example, including the placement specifier and the
-      centering command.
-    traces:
-      - srd004-figures AC1
-  - name: 'The wide class and the width attribute select the environment and the measure'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC2: The wide class produces the starred environment at text width, and
-      a width attribute scales the include against the correct measure in each
-      case.
-    traces:
-      - srd004-figures AC2
-  - name: 'The figure file name survives the crossing, directory dropped and extension kept'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC3: A figure referenced in markdown as a PDF under a directory is
-      included as the same file name with no directory and no extension
-      change.
-    traces:
-      - srd004-figures AC3
-  - name: 'A figure missing its alt text, identifier, or a sane width fails naming the file and line'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC4: An image with no alt text, an image with no identifier, a width of
-      zero, and a remote target each fail with an error naming the file and
-      line.
-    traces:
-      - srd004-figures AC4
-  - name: 'No emitted figure carries a wrapper between the float and its caption'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC5: No emitted figure contains an adjustbox environment or any wrapper
-      between the float and its caption.
-    traces:
-      - srd004-figures AC5
-  - name: 'A table renders as a float whose caption precedes the tabularx'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC1: A three-column table with a caption line renders as a float whose
-      caption precedes the tabularx and whose label follows the caption, with
-      plain caption and label commands and no counter stepping.
-    traces:
-      - srd005-tables AC1
-  - name: 'Column weights sum to the column count, each within its floor and clamp'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC2: The weighting applied to a table whose columns hold short, medium,
-      and long cells produces weights summing to the column count, each at or
-      above its floor and at or below the clamp.
-    traces:
-      - srd005-tables AC2
-  - name: 'The two-column decision follows the column count, the widest cell, and the estimated height'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC3: A five-column table, a two-column table of 200-character cells, and
-      a fifteen-row table of modest cells each select the starred environment;
-      a small three-column table does not.
-    traces:
-      - srd005-tables AC3
-  - name: 'A table with no caption line, and a caption line with no identifier, each fail'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC4: A pipe table with no caption line, and a caption line with no
-      identifier, each fail with an error naming the file and line.
-    traces:
-      - srd005-tables AC4
-  - name: 'No emitted table carries longtable, a strip environment, or a bold header row'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC5: No emitted table contains longtable, a strip environment, or a bold
-      header row.
-    traces:
-      - srd005-tables AC5
-  - name: 'A Table paragraph that follows no table renders as ordinary prose'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC6: A paragraph opening with the word Table and a colon that does not
-      follow a table renders as an ordinary paragraph.
-    traces:
-      - srd005-tables AC6
-  - name: 'Cells holding citations render the cite command'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC7: Cells holding citations render the cite command, demonstrating that
-      cell content takes the inline path.
-    traces:
-      - srd005-tables AC7
-  - name: 'A table with nothing to measure falls back to equal-width columns'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC8: A table whose cells offer nothing to measure falls back to equal-
-      width columns rather than failing.
-    traces:
-      - srd005-tables AC8
-  - name: 'Every emitted construct reads back with its caption, paragraph, and cell text as prose'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC1: Every fixture in the corpus reads back with its caption, paragraph,
-      and cell text as prose, none of it inside a raw block.
-    traces:
-      - srd009-backport-compatibility AC1
-  - name: 'A caption edited in an emitted float comes back as a prose difference confined to the caption'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC2: A caption edited in an emitted figure and in an emitted table both
-      come back as a prose difference confined to the caption.
-    traces:
-      - srd009-backport-compatibility AC2
-  - name: 'The forbidden forms appear nowhere in the emitted output'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC3: A grep over the library's output for adjustbox, refstepcounter, a
-      strip environment, and longtable finds nothing.
-    traces:
-      - srd009-backport-compatibility AC3
-  - name: 'An emitted table header carries no emphasis, and a backported table differs only in edited cells'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC4: An emitted table's header row carries no emphasis, and a backported
-      table differs from its source in edited cells only.
-    traces:
-      - srd009-backport-compatibility AC4
-  - name: 'A float-placement edit produces no prose difference'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC5: A float-placement edit made in an emitted float produces no prose
-      difference, confirming the typesetting boundary rather than a failure.
-    traces:
-      - srd009-backport-compatibility AC5
-  - name: 'The fixture tests skip where the reader is absent and run where it is present'
-    use_case: rel00.2-uc001-floats-in-two-columns
-    status: planned
-    description: |
-      AC6: The fixture tests skip cleanly where the reader is absent and run
-      where it is present.
-    traces:
-      - srd009-backport-compatibility AC6
   - name: 'Options carries the graphics path and the float width thresholds the float renderers read'
     use_case: rel00.2-uc001-floats-in-two-columns
     status: planned
@@ -191,3 +32,465 @@ test_cases:
       to this release.
     traces:
       - srd002-renderer-core AC12
+  - name: 'srd004-figures R1.1, R1.2, R2.1, R2.2, R2.3, R4.1, and AC1 with the example the SRD states, byte for byte'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureRendersTheSRDExample
+    status: done
+    description: |
+      TestFigureRendersTheSRDExample covers srd004-figures R1.1, R1.2, R2.1,
+      R2.2, R2.3, R4.1, and AC1 with the example the SRD states, byte for byte.
+    traces:
+      - srd004-figures R1.1
+      - srd004-figures R1.2
+      - srd004-figures R2.1
+      - srd004-figures R2.2
+      - srd004-figures R2.3
+      - srd004-figures R4.1
+      - srd004-figures AC1
+  - name: 'srd004-figures R3.1 and AC2 with the second example the SRD states'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestWideFigureSpansBothColumns
+    status: done
+    description: |
+      TestWideFigureSpansBothColumns covers srd004-figures R3.1 and AC2 with the
+      second example the SRD states.
+    traces:
+      - srd004-figures R3.1
+      - srd004-figures AC2
+  - name: 'srd004-figures R3.2, R3.4, and AC2 with the third example, plus the two-column measure'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureWidthScalesTheEnclosingMeasure
+    status: done
+    description: |
+      TestFigureWidthScalesTheEnclosingMeasure covers srd004-figures R3.2, R3.4,
+      and AC2 with the third example, plus the two-column measure.
+    traces:
+      - srd004-figures R3.2
+      - srd004-figures R3.4
+      - srd004-figures AC2
+  - name: 'the directory is dropped because the container supplies a graphics path, and the extension is never rewritten'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureKeepsItsFileName
+    status: done
+    description: |
+      TestFigureKeepsItsFileName covers srd004-figures R4.1, R4.2, and AC3: the
+      directory is dropped because the container supplies a graphics path, and
+      the extension is never rewritten.
+    traces:
+      - srd004-figures R4.1
+      - srd004-figures R4.2
+      - srd004-figures AC3
+  - name: 'the caption escapes and renders inline constructs as a paragraph does'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureCaptionTakesTheInlinePath
+    status: done
+    description: |
+      TestFigureCaptionTakesTheInlinePath covers srd004-figures R2.2: the
+      caption escapes and renders inline constructs as a paragraph does.
+    traces:
+      - srd004-figures R2.2
+  - name: 'identifiers are not normalized, slugged, or prefixed'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureIdentifierIsEmittedVerbatim
+    status: done
+    description: |
+      TestFigureIdentifierIsEmittedVerbatim covers srd004-figures R2.3:
+      identifiers are not normalized, slugged, or prefixed.
+    traces:
+      - srd004-figures R2.3
+  - name: 'each failure names the construct and its line rather than emitting a float nobody can reference'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureErrors
+    status: done
+    description: |
+      TestFigureErrors covers srd004-figures R1.3, R1.4, R3.3, R4.4, and AC4:
+      each failure names the construct and its line rather than emitting a float
+      nobody can reference.
+    traces:
+      - srd004-figures R1.3
+      - srd004-figures R1.4
+      - srd004-figures R3.3
+      - srd004-figures R4.4
+      - srd004-figures AC4
+  - name: 'an image with other content beside it is inline, and inline images have no mapping'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestInlineImageIsNotAFloat
+    status: done
+    description: |
+      TestInlineImageIsNotAFloat covers srd004-figures R1.1: an image with other
+      content beside it is inline, and inline images have no mapping.
+    traces:
+      - srd004-figures R1.1
+  - name: 'the renderer does not check that the figure exists, because conversion opens no file'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureReadsNoFile
+    status: done
+    description: |
+      TestFigureReadsNoFile covers srd004-figures R4.3: the renderer does not
+      check that the figure exists, because conversion opens no file.
+    traces:
+      - srd004-figures R4.3
+  - name: 'no adjustbox, and nothing between the float and its caption'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFigureEmitsNoWrapper
+    status: done
+    description: |
+      TestFigureEmitsNoWrapper covers srd004-figures R2.4 and AC5: no adjustbox,
+      and nothing between the float and its caption.
+    traces:
+      - srd004-figures R2.4
+      - srd004-figures AC5
+  - name: 'including the column specification its weighting produces'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableRendersTheSRDExample
+    status: done
+    description: |
+      TestTableRendersTheSRDExample covers srd005-tables R1.1, R1.2, R2.1, R2.2,
+      R2.3, R2.5, R2.7, R3.6, and AC1 with the first example the SRD states,
+      byte for byte -- including the column specification its weighting
+      produces.
+    traces:
+      - srd005-tables R1.1
+      - srd005-tables R1.2
+      - srd005-tables R2.1
+      - srd005-tables R2.2
+      - srd005-tables R2.3
+      - srd005-tables R2.5
+      - srd005-tables R2.7
+      - srd005-tables R3.6
+      - srd005-tables AC1
+  - name: 'five columns select the starred float on the column count alone'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestWideTableRendersTheSRDExample
+    status: done
+    description: |
+      TestWideTableRendersTheSRDExample covers srd005-tables R4.1, R4.5, and AC3
+      with the second example: five columns select the starred float on the
+      column count alone.
+    traces:
+      - srd005-tables R4.1
+      - srd005-tables R4.5
+      - srd005-tables AC3
+  - name: 'whatever the damping, the floors, and the clamp do to a column, the weights are rescaled to sum to the column count, whi'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestColumnWeightsSumToTheColumnCount
+    status: done
+    description: |
+      TestColumnWeightsSumToTheColumnCount covers srd005-tables R3.1, R3.2,
+      R3.3, R3.5, and AC2: whatever the damping, the floors, and the clamp do to
+      a column, the weights are rescaled to sum to the column count, which is
+      what tabularx requires of an hsize specification. The floors and the clamp
+      are steps rather than invariants of the result: the rescale that restores
+      the sum can carry a floored column back under its floor, which is what the
+      reference filter does and what the SRD's own worked examples show.
+    traces:
+      - srd005-tables R3.1
+      - srd005-tables R3.2
+      - srd005-tables R3.3
+      - srd005-tables R3.5
+      - srd005-tables AC2
+  - name: 'the weighting follows the cell contents, damped so ten times the text does not take ten times the measure'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestLongerColumnsTakeMoreWidth
+    status: done
+    description: |
+      TestLongerColumnsTakeMoreWidth covers srd005-tables R3.1 and R3.2: the
+      weighting follows the cell contents, damped so ten times the text does not
+      take ten times the measure.
+    traces:
+      - srd005-tables R3.1
+      - srd005-tables R3.2
+  - name: 'a column is floored at the width its longest unbreakable word needs, because a narrower one overflows the rule. The same'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestAnUnbreakableWordWidensItsColumn
+    status: done
+    description: |
+      TestAnUnbreakableWordWidensItsColumn covers srd005-tables R3.4: a column
+      is floored at the width its longest unbreakable word needs, because a
+      narrower one overflows the rule. The same table with that word broken up
+      weighs the column lower.
+    traces:
+      - srd005-tables R3.4
+  - name: 'word length is measured after removing LaTeX control sequences and braces, so a citation does not widen a column by the '
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestControlSequencesDoNotCountAsWordLength
+    status: done
+    description: |
+      TestControlSequencesDoNotCountAsWordLength covers srd005-tables R3.4: word
+      length is measured after removing LaTeX control sequences and braces, so a
+      citation does not widen a column by the length of its command.
+    traces:
+      - srd005-tables R3.4
+  - name: 'the width bar and the height bar each span a table the column count alone would leave in one column'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestWideDecisionReadsMoreThanTheColumnCount
+    status: done
+    description: |
+      TestWideDecisionReadsMoreThanTheColumnCount covers srd005-tables R4.1,
+      R4.2, R4.3, R4.4, and AC3: the width bar and the height bar each span a
+      table the column count alone would leave in one column.
+    traces:
+      - srd005-tables R4.1
+      - srd005-tables R4.2
+      - srd005-tables R4.3
+      - srd005-tables R4.4
+      - srd005-tables AC3
+  - name: 'a cell escapes and renders citations and emphasis as a paragraph does'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableCellsTakeTheInlinePath
+    status: done
+    description: |
+      TestTableCellsTakeTheInlinePath covers srd005-tables R2.6 and AC7: a cell
+      escapes and renders citations and emphasis as a paragraph does.
+    traces:
+      - srd005-tables R2.6
+      - srd005-tables AC7
+  - name: 'the default is one step below the body, and a caller asking for body size gets no command'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableFontSizeIsConfigurable
+    status: done
+    description: |
+      TestTableFontSizeIsConfigurable covers srd005-tables R2.7: the default is
+      one step below the body, and a caller asking for body size gets no
+      command.
+    traces:
+      - srd005-tables R2.7
+  - name: 'each failure names the table and its line'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableErrors
+    status: done
+    description: |
+      TestTableErrors covers srd005-tables R1.3, R1.4, R1.5, R5.4, and AC4: each
+      failure names the table and its line.
+    traces:
+      - srd005-tables R1.3
+      - srd005-tables R1.4
+      - srd005-tables R1.5
+      - srd005-tables R5.4
+      - srd005-tables AC4
+  - name: 'a paragraph opening with the caption prefix that follows no table is prose'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestCaptionParagraphElsewhereIsProse
+    status: done
+    description: |
+      TestCaptionParagraphElsewhereIsProse covers srd005-tables R1.3 and AC6: a
+      paragraph opening with the caption prefix that follows no table is prose.
+    traces:
+      - srd005-tables R1.3
+      - srd005-tables AC6
+  - name: 'a table with nothing to measure takes equal-width columns rather than failing'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestEmptyWeightingFallsBack
+    status: done
+    description: |
+      TestEmptyWeightingFallsBack covers srd005-tables R3.7 and AC8: a table
+      with nothing to measure takes equal-width columns rather than failing.
+    traces:
+      - srd005-tables R3.7
+      - srd005-tables AC8
+  - name: 'no longtable, no strip, no bold header, and nothing between the float and its caption'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTableEmitsNoForbiddenForm
+    status: done
+    description: |
+      TestTableEmitsNoForbiddenForm covers srd005-tables R2.4, R5.1, R5.2, R5.3,
+      and AC5: no longtable, no strip, no bold header, and nothing between the
+      float and its caption.
+    traces:
+      - srd005-tables R2.4
+      - srd005-tables R5.1
+      - srd005-tables R5.2
+      - srd005-tables R5.3
+      - srd005-tables AC5
+  - name: 'no fixture the float renderers emit carries a form the SRD forbids, the bold header row among them'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestEmittedFloatsCarryNoForbiddenForm
+    status: done
+    description: |
+      TestEmittedFloatsCarryNoForbiddenForm covers srd009-backport-compatibility
+      R1.1, R3.1, R3.2, R3.3, R3.4, R3.5, R3.6, AC3, and AC4: no fixture the
+      float renderers emit carries a form the SRD forbids, the bold header row
+      among them.
+    traces:
+      - srd009-backport-compatibility R1.1
+      - srd009-backport-compatibility R3.1
+      - srd009-backport-compatibility R3.2
+      - srd009-backport-compatibility R3.3
+      - srd009-backport-compatibility R3.4
+      - srd009-backport-compatibility R3.5
+      - srd009-backport-compatibility R3.6
+      - srd009-backport-compatibility AC3
+      - srd009-backport-compatibility AC4
+  - name: 'every emitted float carries the plain caption and label pair, in the order its kind states, with nothing between them'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestEmittedFloatsCarryPlainCaptions
+    status: done
+    description: |
+      TestEmittedFloatsCarryPlainCaptions covers srd009-backport-compatibility
+      R2.1, R2.2, R2.3, R2.4, and AC1: every emitted float carries the plain
+      caption and label pair, in the order its kind states, with nothing between
+      them.
+    traces:
+      - srd009-backport-compatibility R2.1
+      - srd009-backport-compatibility R2.2
+      - srd009-backport-compatibility R2.3
+      - srd009-backport-compatibility R2.4
+      - srd009-backport-compatibility AC1
+  - name: 'a figure captions after its include and a table captions before its body, which is what the manuscripts hand-write'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestCaptionOrderFollowsTheFloatKind
+    status: done
+    description: |
+      TestCaptionOrderFollowsTheFloatKind covers srd009-backport-compatibility
+      R2.3: a figure captions after its include and a table captions before its
+      body, which is what the manuscripts hand-write.
+    traces:
+      - srd009-backport-compatibility R2.3
+  - name: 'a caption carrying emphasis or a citation comes back carrying the same, because the reader recovers both'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestCaptionsCarryTheirInlineContent
+    status: done
+    description: |
+      TestCaptionsCarryTheirInlineContent covers srd009-backport-compatibility
+      R2.4: a caption carrying emphasis or a citation comes back carrying the
+      same, because the reader recovers both.
+    traces:
+      - srd009-backport-compatibility R2.4
+  - name: 'the constraint binds the front matter, the renderer core, and the float renderers, and does not bind raw LaTeX the autho'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTheConstraintBindsTheEmittingComponents
+    status: done
+    description: |
+      TestTheConstraintBindsTheEmittingComponents covers srd009-backport-
+      compatibility R1.4: the constraint binds the front matter, the renderer
+      core, and the float renderers, and does not bind raw LaTeX the author
+      wrote.
+    traces:
+      - srd009-backport-compatibility R1.4
+  - name: 'a float-placement edit is expected to be lost on the way back, and is not what this constraint protects'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTypesettingEditsAreNotProse
+    status: done
+    description: |
+      TestTypesettingEditsAreNotProse covers srd009-backport-compatibility R1.3
+      and AC5: a float-placement edit is expected to be lost on the way back,
+      and is not what this constraint protects.
+    traces:
+      - srd009-backport-compatibility R1.3
+      - srd009-backport-compatibility AC5
+  - name: 'every fixture''s caption and cell text comes back as prose rather than inside a raw block, and the whole set skips cleanl'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestEmittedFloatsReadBackAsProse
+    status: done
+    description: |
+      TestEmittedFloatsReadBackAsProse covers srd009-backport-compatibility
+      R1.1, R4.1, R4.2, R4.4, AC1, and AC6: every fixture's caption and cell
+      text comes back as prose rather than inside a raw block, and the whole set
+      skips cleanly where the reader is absent.
+    traces:
+      - srd009-backport-compatibility R1.1
+      - srd009-backport-compatibility R4.1
+      - srd009-backport-compatibility R4.2
+      - srd009-backport-compatibility R4.4
+      - srd009-backport-compatibility AC1
+      - srd009-backport-compatibility AC6
+  - name: 'a caption edited in the emitted LaTeX differs after the round trip, and differs in the caption rather than everywhere'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestACaptionEditComesBackAsProse
+    status: done
+    description: |
+      TestACaptionEditComesBackAsProse covers srd009-backport-compatibility
+      R2.1, R4.3, and AC2: a caption edited in the emitted LaTeX differs after
+      the round trip, and differs in the caption rather than everywhere.
+    traces:
+      - srd009-backport-compatibility R2.1
+      - srd009-backport-compatibility R4.3
+      - srd009-backport-compatibility AC2
+  - name: 'typesetting is expected to be lost on the way back, which is the boundary this constraint draws'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestAPlacementEditComesBackAsNothing
+    status: done
+    description: |
+      TestAPlacementEditComesBackAsNothing covers srd009-backport-compatibility
+      R1.3 and AC5: typesetting is expected to be lost on the way back, which is
+      the boundary this constraint draws.
+    traces:
+      - srd009-backport-compatibility R1.3
+      - srd009-backport-compatibility AC5
+  - name: 'TestAWideTableLosesItsCaptionOnTheWayBack records a conflict between two requirements, found by running the reader rathe'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestAWideTableLosesItsCaptionOnTheWayBack
+    status: done
+    description: |
+      TestAWideTableLosesItsCaptionOnTheWayBack records a conflict between two
+      requirements, found by running the reader rather than by reading the SRDs.
+      srd005-tables R4.5 sends a spanning table to the starred environment, and
+      srd009-backport-compatibility R1.1 requires a caption to come back as
+      prose. The reader knows the plain table environment and recovers its
+      caption as a markdown table caption; it treats table* as an unknown div
+      and drops the caption entirely. The starred figure environment does not
+      have the problem, because the reader renders it as an HTML figure with its
+      figcaption intact. The two requirements cannot both hold for a wide table
+      under this reader. Which one gives is a decision for the SRDs, filed as
+      GH-34, so this test records the finding rather than asserting either
+      answer.
+    traces:
+      - srd005-tables R4.5
+      - srd009-backport-compatibility R1.1
+  - name: 'every form the SRD forbids is found and named, with the line it sits on'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestForbiddenFindsEachForm
+    status: done
+    description: |
+      TestForbiddenFindsEachForm covers srd009-backport-compatibility R3.1,
+      R3.2, R3.3, R3.4, R3.5, and AC3: every form the SRD forbids is found and
+      named, with the line it sits on.
+    traces:
+      - srd009-backport-compatibility R3.1
+      - srd009-backport-compatibility R3.2
+      - srd009-backport-compatibility R3.3
+      - srd009-backport-compatibility R3.4
+      - srd009-backport-compatibility R3.5
+      - srd009-backport-compatibility AC3
+  - name: 'the plain float the SRD permits carries nothing forbidden'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestForbiddenPassesThePermittedForms
+    status: done
+    description: |
+      TestForbiddenPassesThePermittedForms covers srd009-backport-compatibility
+      R2.1 and R2.2: the plain float the SRD permits carries nothing forbidden.
+    traces:
+      - srd009-backport-compatibility R2.1
+      - srd009-backport-compatibility R2.2
+  - name: 'the rule is about a header row of bold cells, not about emphasis an author wrote inside a sentence'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestBoldCellsOutsideAHeaderAreNotFlagged
+    status: done
+    description: |
+      TestBoldCellsOutsideAHeaderAreNotFlagged covers srd009-backport-
+      compatibility R3.3: the rule is about a header row of bold cells, not
+      about emphasis an author wrote inside a sentence.
+    traces:
+      - srd009-backport-compatibility R3.3
+  - name: 'a float needs the caption and label pair, in that order, for both float kinds'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFloatsCarryPlainCaptions
+    status: done
+    description: |
+      TestFloatsCarryPlainCaptions covers srd009-backport-compatibility R2.1,
+      R2.2, and R2.3: a float needs the caption and label pair, in that order,
+      for both float kinds.
+    traces:
+      - srd009-backport-compatibility R2.1
+      - srd009-backport-compatibility R2.2
+      - srd009-backport-compatibility R2.3
+  - name: 'a finding says what the form breaks, because the form compiles and the cost is invisible without the explanation'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestFindingsReadAsAdvice
+    status: done
+    description: |
+      TestFindingsReadAsAdvice covers srd009-backport-compatibility R1.2: a
+      finding says what the form breaks, because the form compiles and the cost
+      is invisible without the explanation.
+    traces:
+      - srd009-backport-compatibility R1.2

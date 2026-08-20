@@ -251,7 +251,7 @@ func TestRawLaTeXBlockPassesThrough(t *testing.T) {
 // TestHTMLCommentsAreDropped covers srd002-renderer-core R6.3, which is what
 // keeps the manuscripts' backlink comments out of the LaTeX.
 func TestHTMLCommentsAreDropped(t *testing.T) {
-	const source = "# Introduction\n\n<!-- S1 -- governed by docs/specs/software-requirements/srd-1.yaml -->\n\nProse.\n"
+	const source = "# Introduction\n\n<!-- S1 -- governed by docs/specs/software-requirements/srd001-front-matter.yaml -->\n\nProse.\n"
 
 	got := convert(t, source)
 	if strings.Contains(got, "governed by") || strings.Contains(got, "<!--") {
@@ -263,7 +263,8 @@ func TestHTMLCommentsAreDropped(t *testing.T) {
 }
 
 // TestUnmappedConstructsAreErrors covers srd002-renderer-core R6.4 and R1.3:
-// each names the construct and its line, and none is silently omitted.
+// each names the construct and its line, and none is silently omitted. An
+// image block is not among them: it renders as a float (srd004-figures).
 func TestUnmappedConstructsAreErrors(t *testing.T) {
 	cases := []struct {
 		name      string
@@ -273,7 +274,6 @@ func TestUnmappedConstructsAreErrors(t *testing.T) {
 	}{
 		{"thematic break", "Prose.\n\n---\n\nMore prose.\n", "thematic break", 3},
 		{"raw HTML block", "Prose.\n\n<div>content</div>\n", "raw HTML", 3},
-		{"image", "Prose.\n\n![A diagram](fig/diagram.pdf){#fig:diagram}\n", "image", 3},
 		{
 			name:      "pipe table",
 			source:    "Prose.\n\n| a | b |\n|---|---|\n| 1 | 2 |\n",
