@@ -93,7 +93,7 @@ requirements:
       - R4.2: 'Estimated height charges each body row the lines its widest cell needs, computed as that cell''s character count multiplied by the column count divided by 55 and rounded up, with a minimum of one line per row. The divisor is the characters one column fits on a line at the table''s font size.'
       - R4.3: 'Column count alone is not the test. A two-column table of 200-character cells is as cramped as a five-column table of short ones, and a fifteen-row table of modest cells still runs half a column as a ribbon.'
       - R4.4: The bars are set high on purpose. Spanning turns a table into a float that leaves its text behind, so spanning everything is worse than spanning nothing.
-      - R4.5: A spanning table uses the starred table environment and the text width; a non-spanning table uses the plain environment and the column width. Both are floats.
+      - R4.5: 'A spanning table uses the starred table environment and the text width; a non-spanning table uses the plain environment and the column width. Both are floats. The starred form costs the caption on the way back, which srd009-backport-compatibility R3.7 states as its one admitted exception: a caption edit to a wide table does not reach the markdown.'
     examples:
       - markdown: |
           | Level | Who writes it | Approval | Coverage | Example |

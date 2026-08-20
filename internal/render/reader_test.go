@@ -138,24 +138,44 @@ func differingLines(before, after string) int {
 	return count
 }
 
-// TestAWideTableLosesItsCaptionOnTheWayBack records a conflict between two
-// requirements, found by running the reader rather than by reading the SRDs.
+// TestAWideTableDropsItsCaptionAndKeepsItsCells covers
+// srd009-backport-compatibility R3.6, R3.7, R3.8, and AC7: the one exception
+// the constraint admits, asserted rather than left as a question.
 //
-// srd005-tables R4.5 sends a spanning table to the starred environment, and
-// srd009-backport-compatibility R1.1 requires a caption to come back as prose.
-// The reader knows the plain table environment and recovers its caption as a
-// markdown table caption; it treats table* as an unknown div and drops the
-// caption entirely. The starred figure environment does not have the problem,
-// because the reader renders it as an HTML figure with its figcaption intact.
-//
-// The two requirements cannot both hold for a wide table under this reader.
-// Which one gives is a decision for the SRDs, filed as GH-34, so this test
-// records the finding rather than asserting either answer.
-func TestAWideTableLosesItsCaptionOnTheWayBack(t *testing.T) {
-	markdown := readBack(t, convert(t, floatFixtures["a wide table"]))
+// The reader recovers a plain table float's caption as a markdown table
+// caption and treats the starred form as an unknown division, dropping the
+// caption. srd005-tables R4.5 needs the starred form for a spanning table, so
+// a caption edit to a wide table does not reach the markdown. What does
+// survive is everything else: the cell text comes back as prose, and because
+// the caption is dropped on both sides of the pipeline's comparison, the lost
+// edit is ignored rather than corrupting the source.
+func TestAWideTableDropsItsCaptionAndKeepsItsCells(t *testing.T) {
+	wide := readBack(t, convert(t, floatFixtures["a wide table"]))
 
-	if strings.Contains(markdown, "Autonomy levels by authorship and approval.") {
-		t.Fatal("the reader now recovers a table* caption; GH-34 is resolved and this test should assert it")
+	if strings.Contains(wide, "Autonomy levels by authorship and approval.") {
+		t.Error("the reader now recovers a starred table's caption; " +
+			"srd009-backport-compatibility R3.7 records that it does not, and should be revisited")
 	}
-	t.Logf("a wide table's caption does not survive the round trip (GH-34):\n%s", markdown)
+	for _, cell := range []string{"Fault management", "Guided agent", "Pre-approved"} {
+		if !strings.Contains(wide, cell) {
+			t.Errorf("a wide table lost its cell text as well as its caption:\n%s", wide)
+		}
+	}
+}
+
+// TestAnUnstarredTableKeepsItsCaption covers
+// srd009-backport-compatibility R3.8 and AC7: the evidence the exception rests
+// on. The same table set unstarred returns its caption, so the loss is the
+// starred environment's and not the table renderer's.
+func TestAnUnstarredTableKeepsItsCaption(t *testing.T) {
+	unstarred := strings.NewReplacer(
+		`\begin{table*}`, `\begin{table}`,
+		`\end{table*}`, `\end{table}`,
+		`{\textwidth}`, `{\columnwidth}`,
+	).Replace(convert(t, floatFixtures["a wide table"]))
+
+	markdown := readBack(t, unstarred)
+	if !strings.Contains(markdown, "Autonomy levels by authorship and approval.") {
+		t.Errorf("the unstarred form lost its caption too, so the exception is misattributed:\n%s", markdown)
+	}
 }

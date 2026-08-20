@@ -62,6 +62,8 @@ requirements:
       - R3.4: 'Non-float spanning mechanisms - the strip environment among them - are forbidden. Beyond overlapping the column text, they read back as raw. Constrains srd005-tables R5.3.'
       - R3.5: 'Longtable is forbidden for the layout reason srd005-tables R5.1 gives, and the reader is not the reason: a longtable reads back acceptably. This SRD records that the two constraints agree here rather than that one implies the other.'
       - R3.6: A construct that reads back as raw is forbidden even when its LaTeX is unremarkable. R4 says how that is established.
+      - R3.7: 'The two-column table environment is the one exception R3.6 admits, and it is stated rather than discovered. The reader recovers a plain table float''s caption as a markdown table caption; it treats the starred form as an unknown division and drops the caption entirely, so a caption edit to a wide table does not come back. Cell text and prose still return normally, and the caption is dropped on both sides of the pipeline''s comparison, so the edit is ignored rather than corrupting anything.'
+      - R3.8: 'The exception stands because every alternative costs more, each measured against the reader rather than argued: a plain table float at the text width recovers its caption and overflows the column in a two-column class; a table set inside a starred figure float keeps its caption and returns the table as HTML, numbered as a figure; and reading with raw LaTeX enabled returns the whole float as raw, losing the cell prose as well. Recovering a wide table''s caption belongs to the pipeline, which can read it from the LaTeX rather than through the reader.'
   R4:
     title: How the constraint is tested
     items:
@@ -87,6 +89,9 @@ acceptance_criteria:
   - id: AC3
     criterion: A grep over the library's output for adjustbox, refstepcounter, a strip environment, and longtable finds nothing.
     traces: [R3.1, R3.2, R3.4, R3.5]
+  - id: AC7
+    criterion: 'A wide table read back through the pipeline''s reader returns its cell text as prose and does not return its caption, which is the exception R3.7 states; the same table set unstarred returns its caption, which is the evidence the exception rests on.'
+    traces: [R3.6, R3.7, R3.8]
   - id: AC4
     criterion: An emitted table's header row carries no emphasis, and a backported table differs from its source in edited cells only.
     traces: [R3.3]
