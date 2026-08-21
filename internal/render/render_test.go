@@ -335,7 +335,9 @@ func TestUnknownCitationKeyFailsTheConversion(t *testing.T) {
 	}
 }
 
-// TestFragmentShape covers srd002-renderer-core R1.4 and R1.5.
+// TestFragmentShape covers srd002-renderer-core R1.4, R1.5, and AC11: the
+// fragment ends with exactly one newline and does not begin with a blank line,
+// whatever blank lines the source carried, and it carries no preamble.
 func TestFragmentShape(t *testing.T) {
 	got := convert(t, "\n\n# A heading\n\nProse.\n\n\n")
 
@@ -412,8 +414,9 @@ func TestZeroConfigConverts(t *testing.T) {
 	}
 }
 
-// TestHeadingTextTakesInlineConstructs covers srd002-renderer-core R3.3:
-// heading text escapes and renders inline constructs as a paragraph does.
+// TestHeadingTextTakesInlineConstructs covers srd002-renderer-core R3.3 and
+// AC13: a heading carrying emphasis and LaTeX special characters renders them
+// as a paragraph would, escaped and marked up.
 func TestHeadingTextTakesInlineConstructs(t *testing.T) {
 	const source = "# R&D on *guided* agents\n"
 	const want = "\\section{R\\&D on \\emph{guided} agents}\\label{r-d-on-guided-agents}\n"
@@ -437,5 +440,135 @@ func TestRawLaTeXIsTheRouteAroundTheMapping(t *testing.T) {
 	got := convert(t, written)
 	if !strings.Contains(got, `\hrulefill`) {
 		t.Errorf("raw LaTeX did not reach the fragment:\n%s", got)
+	}
+}
+
+// TestAMalformedCitationFailsTheConversion covers srd006-citations R4.2, R4.7,
+// AC7, and srd002-renderer-core R6.4: a run that states the intent to cite and
+// does not parse is an error naming the file and position, never literal text
+// in a fragment.
+//
+// This is the failure the requirement was rewritten for. The run used to reach
+// the fragment as brackets, read as prose, and typeset as brackets in the PDF,
+// which is how eight citations left a converted paper with nothing reporting
+// it.
+func TestAMalformedCitationFailsTheConversion(t *testing.T) {
+	cases := []struct {
+		name   string
+		source string
+		line   int
+	}{
+		{"an unterminated run", "Prose.\n\nAn unterminated [@du-2023 run.\n", 3},
+		{"an at sign with no key", "Prose.\n\nAn empty [@] run.\n", 3},
+		{"a key carrying a space", "Prose.\n\nA spaced [@du 2023] run.\n", 3},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			failure := convertError(t, testCase.source)
+
+			if failure.Construct != "citation" {
+				t.Errorf("Construct = %q, want citation", failure.Construct)
+			}
+			if failure.Line != testCase.line {
+				t.Errorf("Line = %d, want %d", failure.Line, testCase.line)
+			}
+			if !strings.Contains(failure.Detail, "does not parse as a citation") {
+				t.Errorf("Detail = %q", failure.Detail)
+			}
+		})
+	}
+}
+
+// TestNoFragmentCarriesLiteralCitationText covers srd006-citations AC7 over
+// the whole mapping: whatever a chapter holds, a bracket-at run either becomes
+// a cite command or fails the conversion.
+func TestNoFragmentCarriesLiteralCitationText(t *testing.T) {
+	sources := []string{
+		"Cited [@du-2023].\n",
+		"Cited [@du-2023; @alam-2024].\n",
+		"# A heading citing [@du-2023]\n",
+		"| A | B |\n|---|---|\n| [@du-2023] | 2 |\n\nTable: A caption. {#tab:c}\n",
+		"![A caption citing [@du-2023].](fig/a.pdf){#fig:a}\n",
+		"> A quotation citing [@du-2023].\n",
+	}
+
+	for _, source := range sources {
+		fragment, _, err := Convert([]byte(source), "chapter.md", Config{})
+		if err != nil {
+			t.Errorf("Convert(%q) error: %v", source, err)
+			continue
+		}
+		if strings.Contains(string(fragment), "[@") {
+			t.Errorf("Convert(%q) left literal citation text:\n%s", source, fragment)
+		}
+	}
+}
+
+// TestTheKeysThatLeftThePaper covers srd006-citations R1.2 and AC8 with the
+// evidence that found the defect: the eight keys a converted paper lost, and
+// the group shape that lost them.
+//
+// Only one of the eight carries a non-ASCII letter. The other seven were
+// ASCII, and were dropped because they shared a bracketed group with it.
+func TestTheKeysThatLeftThePaper(t *testing.T) {
+	lost := []string{
+		"cheng-2009", "garlan2004rainbow", "lemos-2013", "mei-2024",
+		"menasceé2011sassy", "rutten-2017", "sifakis-2025", "wu-2025",
+	}
+
+	source := "Self-adaptive systems are surveyed in [@" + strings.Join(lost, "; @") + "].\n"
+	fragment, _, err := Convert([]byte(source), "02-literature-survey.md", Config{})
+	if err != nil {
+		t.Fatalf("Convert() error: %v", err)
+	}
+
+	want := `\cite{` + strings.Join(lost, ",") + `}`
+	if !strings.Contains(string(fragment), want) {
+		t.Errorf("the group did not convert whole:\n got: %s\nwant: %s", fragment, want)
+	}
+	for _, key := range lost {
+		if !strings.Contains(string(fragment), key) {
+			t.Errorf("the fragment lost %q:\n%s", key, fragment)
+		}
+	}
+}
+
+// TestAWholeChapterConverts covers srd002-renderer-core AC1: a chapter of
+// headings, paragraphs, emphasis, lists, quotations, and code converts to one
+// fragment carrying no preamble of its own.
+//
+// The other tests take one construct each; this one takes them together, which
+// is what the criterion asserts and what a chapter actually looks like.
+func TestAWholeChapterConverts(t *testing.T) {
+	const source = "# A heading\n\n" +
+		"A paragraph with *emphasis*, **strength**, and `code`.\n\n" +
+		"## A subheading\n\n" +
+		"- a bullet\n- another\n\n" +
+		"1. first\n2. second\n\n" +
+		"> A quotation.\n\n" +
+		"```go\nif x > 0 {\n}\n```\n"
+
+	fragment := convert(t, source)
+
+	for _, want := range []string{
+		`\section{A heading}`,
+		`\subsection{A subheading}`,
+		`\emph{emphasis}`,
+		`\textbf{strength}`,
+		`\texttt{code}`,
+		`\begin{itemize}`,
+		`\begin{enumerate}`,
+		`\begin{quote}`,
+		`\begin{verbatim}`,
+	} {
+		if !strings.Contains(fragment, want) {
+			t.Errorf("the chapter did not render %s:\n%s", want, fragment)
+		}
+	}
+	for _, forbidden := range []string{`\documentclass`, `\begin{document}`, `\usepackage`} {
+		if strings.Contains(fragment, forbidden) {
+			t.Errorf("the fragment carries %s", forbidden)
+		}
 	}
 }

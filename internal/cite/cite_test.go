@@ -7,6 +7,7 @@ import (
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
 )
 
@@ -167,8 +168,9 @@ func TestValidateDistinguishesAbsentFromEmpty(t *testing.T) {
 	}
 }
 
-// TestParseDeclinesWhatIsNotACitation covers srd006-citations R4.1, R4.2, R4.3,
-// and R4.5, and AC4.
+// TestParseDeclinesWhatIsNotACitation covers srd006-citations R4.1, R4.3, R4.5,
+// R4.6, and AC4: an opening bracket alone is ambiguous, so a run that is not a
+// citation is left to the parsers behind this one.
 func TestParseDeclinesWhatIsNotACitation(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -178,8 +180,6 @@ func TestParseDeclinesWhatIsNotACitation(t *testing.T) {
 		{"reference link", "See [the survey][survey]."},
 		{"image", "![A diagram](fig/diagram.pdf)"},
 		{"plain bracketed text", "The array is [a, b, c] in source order."},
-		{"unterminated run", "An unterminated [@du-2023 run."},
-		{"at sign with no key", "An empty [@] run."},
 		{"inline code", "The syntax is `[@du-2023]` in prose."},
 		{"escaped bracket", `An escaped \[@du-2023] run.`},
 		{"at sign outside brackets", "Mail petar@example.com about it."},
@@ -255,5 +255,89 @@ func TestParserIsTriggeredOnTheOpeningBracket(t *testing.T) {
 	}
 	if found[0].Kind() != Kind {
 		t.Errorf("Kind() = %v, want %v", found[0].Kind(), Kind)
+	}
+}
+
+// TestKeysCarryAnyScript covers srd006-citations R1.2 and AC8: a key is
+// letters and digits in any script, because the corpus generates keys from
+// author surnames and BibTeX resolves the accented ones.
+func TestKeysCarryAnyScript(t *testing.T) {
+	cases := []struct {
+		name   string
+		source string
+		want   []string
+	}{
+		{"an accented surname", "Cited [@menasceé2011sassy].", []string{"menasceé2011sassy"}},
+		{"two accented surnames", "Cited [@martín2020; @curtò2021].", []string{"martín2020", "curtò2021"}},
+		{
+			name:   "accented and ASCII in one group",
+			source: "Cited [@garlan2004rainbow; @menasceé2011sassy; @du-2023].",
+			want:   []string{"garlan2004rainbow", "menasceé2011sassy", "du-2023"},
+		},
+		{"a Greek surname", "Cited [@παπαδοπουλος2020].", []string{"παπαδοπουλος2020"}},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			found := citations(t, testCase.source)
+			if len(found) != 1 {
+				t.Fatalf("parsed %d citations, want 1", len(found))
+			}
+			if strings.Join(found[0].Keys, "|") != strings.Join(testCase.want, "|") {
+				t.Errorf("Keys = %v, want %v", found[0].Keys, testCase.want)
+			}
+		})
+	}
+}
+
+// TestMalformedRunsAreRecorded covers srd006-citations R4.2 and R4.6: a run
+// opening with a bracket and an at sign states the intent to cite, so the
+// parser records what it declined rather than letting it pass as prose.
+func TestMalformedRunsAreRecorded(t *testing.T) {
+	cases := []struct {
+		name   string
+		source string
+	}{
+		{"an unterminated run", "An unterminated [@du-2023 run."},
+		{"an at sign with no key", "An empty [@] run."},
+		{"a key carrying a space", "A spaced [@du 2023] run."},
+		{"a separator with no key after it", "A dangling [@du-2023; ] run."},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			markdown := goldmark.New(goldmark.WithExtensions(Extension))
+			context := parser.NewContext()
+			markdown.Parser().Parse(text.NewReader([]byte(testCase.source)), parser.WithContext(context))
+
+			run, found := MalformedIn(context)
+			if !found {
+				t.Fatalf("the parser declined %q without recording it", testCase.source)
+			}
+			if run.Run == "" || run.Offset < 0 {
+				t.Errorf("the record carries no run or position: %+v", run)
+			}
+			if !strings.Contains(run.Error(), "does not parse as a citation") {
+				t.Errorf("Error() = %q", run.Error())
+			}
+		})
+	}
+}
+
+// TestAnOrdinaryBracketIsNotRecorded covers srd006-citations R4.1 and R4.6:
+// only an unambiguous opening is recorded, so links and prose are untouched.
+func TestAnOrdinaryBracketIsNotRecorded(t *testing.T) {
+	for _, source := range []string{
+		"See [the survey](https://example.com/survey).",
+		"The array is [a, b, c] in source order.",
+		"An escaped \\[@du-2023] run.",
+	} {
+		markdown := goldmark.New(goldmark.WithExtensions(Extension))
+		context := parser.NewContext()
+		markdown.Parser().Parse(text.NewReader([]byte(source)), parser.WithContext(context))
+
+		if run, found := MalformedIn(context); found {
+			t.Errorf("%q was recorded as a malformed citation: %+v", source, run)
+		}
 	}
 }

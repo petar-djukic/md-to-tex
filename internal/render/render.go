@@ -89,7 +89,17 @@ var markdown = goldmark.New(
 func Convert(source []byte, name string, config Config) ([]byte, []Label, error) {
 	walker := &walker{source: source, name: name, config: config, seen: map[string]string{}}
 
-	document := markdown.Parser().Parse(text.NewReader(source))
+	context := parser.NewContext()
+	document := markdown.Parser().Parse(text.NewReader(source), parser.WithContext(context))
+
+	// A run that opened with a bracket and an at sign and did not parse is a
+	// citation the author meant and the extension could not read. Nothing
+	// downstream claims it, so it would otherwise reach the fragment as
+	// literal brackets and typeset as prose (srd006-citations R4.2).
+	if run, found := cite.MalformedIn(context); found {
+		return nil, nil, walker.fail(run.Offset, "citation", run.Error())
+	}
+
 	if err := walker.blocks(document); err != nil {
 		return nil, nil, err
 	}
