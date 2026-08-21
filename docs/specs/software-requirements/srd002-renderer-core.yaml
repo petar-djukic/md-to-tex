@@ -69,7 +69,10 @@ requirements:
       - R4.2: 'Emphasis renders as an emphasis command and strong emphasis as a bold command: the argument is the rendered inline content, not the raw source.'
       - R4.3: Inline code renders as a monospace command whose argument is the escaped code text.
       - R4.4: A soft line break emits a newline, preserving the source's line structure so a backported edit diffs by line. A hard line break emits a LaTeX line break.
-      - R4.5: A link whose text equals its target renders as a url command; any other link renders as an href command with the target first and the rendered text second. The container's preamble supplies hyperref (srd008-container, srd009-backport-compatibility).
+      - R4.5: 'A link whose target begins with a hash names an anchor inside the document and renders as a cross-reference command carrying the identifier, with the hash removed. A link whose text equals its target renders as a url command, and any other link as an href command with the target first and the rendered text second. The container''s preamble supplies hyperref (srd008-container, srd009-backport-compatibility).'
+      - R4.6: 'The anchor is decided before the other two forms. A link whose text is its own target would otherwise take the url branch, which hands a reader an external destination as surely as href does, and both compile without a warning while linking nowhere.'
+      - R4.7: 'A hash with no identifier after it is an error naming the link. An anchor that names nothing can reference nothing, which is what srd004-figures R1.3 says of a float with no identifier.'
+      - R4.8: 'The identifier is not checked against the labels a chapter emits. Conversion sees one chapter (R1.1) and the manuscripts reference figures across chapters, so a check here would fail the valid case. Answering it needs several chapters at once, which is the shape the label reports and the collision check already have (R7); a dangling-anchor check belongs there if one is ever wanted.'
     examples:
       - markdown: |
           The *escaper* handles the ten `special` characters.
@@ -181,6 +184,9 @@ acceptance_criteria:
   - id: AC15
     criterion: A link whose text equals its target renders as a url command, and any other link renders as an href command carrying the target and the rendered text.
     traces: [R4.5]
+  - id: AC22
+    criterion: 'A link whose target begins with a hash renders as a cross-reference carrying the identifier without the hash, including where the text is the target itself; a link to any other target renders as it did before; and a hash with no identifier is an error naming the link.'
+    traces: [R4.5, R4.6, R4.7, R4.8]
   - id: AC16
     criterion: A citation renders through the citation component and a figure or table is dispatched to its own, with the core neither duplicating nor overriding what they emit.
     traces: [R6.1]
