@@ -25,7 +25,7 @@ requirements:
     title: Syntax
     items:
       - R1.1: 'A citation is an opening bracket, one or more keys, and a closing bracket. Each key is an at sign followed by the key text. Keys are separated by a semicolon and optional whitespace.'
-      - R1.2: 'Key text runs over letters, digits, hyphens, underscores, colons, periods, and slashes. A period or colon at the end of the run belongs to the sentence, not the key, and is not consumed.'
+      - R1.2: 'Key text runs over letters and digits in any script, and over hyphens, underscores, colons, periods, and slashes. Letters are Unicode letters, not ASCII ones: the corpus generates keys from author surnames, so Martin, Curto, and Menasce each produce a key carrying an accented letter, and BibTeX resolves them. A period or colon at the end of the run belongs to the sentence, not the key, and is not consumed.'
       - R1.3: The parser is registered as a goldmark inline parser triggered on the opening bracket. It produces a citation node holding the ordered key list, and consumes the run through its closing bracket.
       - R1.4: Duplicate keys within one run are preserved in order. Deduplication is the bibliography style's business.
   R2:
@@ -54,7 +54,9 @@ requirements:
     title: What is not a citation
     items:
       - R4.1: A bracketed run whose first character is not an at sign is not a citation. Markdown link and image syntax parse as they always did.
-      - R4.2: A bracketed run that opens with an at sign but does not close, or that holds a key with no text after the at sign, is not a citation. It renders as ordinary text through the escaper, and the at sign is not markup in LaTeX.
+      - R4.2: 'A bracketed run opening with an at sign states the intent to cite, so a run that opens that way and does not parse is an error naming the file and the position, under srd002-renderer-core R6.4. It is never rendered as ordinary text.'
+      - R4.6: 'The distinction R4.1 and R4.2 draw is between an ambiguous opening and an unambiguous one. An opening bracket alone is a link, an array, or prose, so a run that is not a citation is left to the parsers behind this one. An opening bracket followed by an at sign is a citation and nothing else, so failing to parse it is a defect in the source rather than a construct to pass along.'
+      - R4.7: 'This rule replaces the passthrough this requirement once specified, which is how eight citations left a converted paper without any check reporting it: the run reached the fragment as literal brackets, read as prose, and typeset as brackets in the PDF. Silence is the failure being fixed, so the fix is an error rather than a better guess.'
       - R4.3: Citation syntax inside inline code or a code block is not parsed. Code renders as written (srd002-renderer-core R4.3, R5.4).
       - R4.4: A citation inside raw LaTeX is not parsed, because raw content is never walked (srd007-passthrough). An author writing a cite command by hand gets it through unchanged.
       - R4.5: An escaped opening bracket does not begin a citation.
@@ -76,8 +78,14 @@ acceptance_criteria:
     criterion: With no key set in Options, the same document converts without error; with an empty set, it fails.
     traces: [R3.2, R3.3]
   - id: AC4
-    criterion: A markdown link, an unterminated bracketed run, an at sign in inline code, and a cite command inside a raw-LaTeX block all render unchanged, none of them producing a citation node.
-    traces: [R4.1, R4.2, R4.3, R4.4, R4.5]
+    criterion: A markdown link, an at sign in inline code, an escaped bracket, and a cite command inside a raw-LaTeX block all render unchanged, none of them producing a citation node.
+    traces: [R4.1, R4.3, R4.4, R4.5, R4.6]
+  - id: AC7
+    criterion: 'A bracketed run opening with an at sign that does not parse -- an unterminated run, an at sign with no key text, a key carrying a space -- fails with the file and the position named, and no input produces literal bracket-at text in a fragment.'
+    traces: [R4.2, R4.7]
+  - id: AC8
+    criterion: 'A key carrying a non-ASCII letter converts to a cite command, and a group mixing such keys with ASCII ones converts whole rather than falling through as a unit.'
+    traces: [R1.1, R1.2]
   - id: AC5
     criterion: A citation in a table cell and a citation in a figure caption both render the cite command.
     traces: [R2.3]

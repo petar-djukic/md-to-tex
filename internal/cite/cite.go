@@ -13,6 +13,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -123,16 +125,45 @@ func (p *citationParser) Trigger() []byte { return []byte{'['} }
 
 // Parse consumes one citation run and returns its node, or nil when the run is
 // not a citation. Returning nil rather than an empty node is what lets link
-// and image syntax parse as they always did (srd006-citations R4.1, R4.2).
+// and image syntax parse as they always did (srd006-citations R4.1).
+//
+// A run that opens with a bracket and an at sign states the intent to cite, so
+// failing to parse one is a defect in the source rather than a construct to
+// pass along. The parser records it on the context and declines; the renderer
+// core reads it and fails with the position (srd006-citations R4.2, R4.6).
 func (p *citationParser) Parse(parent ast.Node, block text.Reader, pc parser.Context) ast.Node {
 	line, segment := block.PeekLine()
 	keys, width := parseRun(line)
 	if width == 0 {
+		if opensCitation(line) {
+			recordMalformed(pc, Malformed{
+				Offset: segment.Start,
+				Run:    firstLine(string(line)),
+			})
+		}
 		return nil
 	}
 	node := &Node{Keys: keys, Offset: segment.Start}
 	block.Advance(width)
 	return node
+}
+
+// opensCitation reports whether a run states the intent to cite: an opening
+// bracket followed directly by an at sign. An opening bracket alone is a link,
+// an array, or prose (srd006-citations R4.1, R4.6).
+func opensCitation(line []byte) bool {
+	return len(line) > 1 && line[0] == '[' && line[1] == '@'
+}
+
+// firstLine trims a run to what fits an error message.
+func firstLine(run string) string {
+	if index := strings.IndexByte(run, '\n'); index >= 0 {
+		run = run[:index]
+	}
+	if len(run) > 40 {
+		run = run[:40] + "..."
+	}
+	return run
 }
 
 // parseRun reads a citation from the start of line and returns its keys and
@@ -155,8 +186,12 @@ func parseRun(line []byte) ([]string, int) {
 		position++
 
 		start := position
-		for position < len(line) && isKeyByte(line[position]) {
-			position++
+		for position < len(line) {
+			character, width := utf8.DecodeRune(line[position:])
+			if !isKeyRune(character) {
+				break
+			}
+			position += width
 		}
 		key := trimSentencePunctuation(string(line[start:position]))
 		if key == "" {
@@ -188,16 +223,20 @@ func parseRun(line []byte) ([]string, int) {
 	}
 }
 
-// isKeyByte reports whether b may appear in key text: letters, digits,
-// hyphens, underscores, colons, periods, and slashes (srd006-citations R1.2).
-func isKeyByte(b byte) bool {
-	switch {
-	case b >= 'a' && b <= 'z', b >= 'A' && b <= 'Z', b >= '0' && b <= '9':
-		return true
-	case b == '-', b == '_', b == ':', b == '.', b == '/':
+// isKeyRune reports whether a character may appear in key text: letters and
+// digits in any script, and hyphens, underscores, colons, periods, and slashes
+// (srd006-citations R1.2).
+//
+// Letters are Unicode letters rather than ASCII ones. The corpus generates
+// keys from author surnames, so an accented surname produces a key carrying an
+// accented letter; BibTeX resolves those, and reading keys byte by byte was
+// what dropped them.
+func isKeyRune(character rune) bool {
+	switch character {
+	case '-', '_', ':', '.', '/':
 		return true
 	}
-	return false
+	return unicode.IsLetter(character) || unicode.IsDigit(character)
 }
 
 // trimSentencePunctuation gives back a trailing period or colon, which belongs
