@@ -598,6 +598,54 @@ test_cases:
       carrying none converts byte for byte as it did before the rule existed.
     traces:
       - srd002-renderer-core R6.6
+  - name: 'raw HTML with no mapping is reported with its tag and position, and no input crashes the caller. The panic this replaces'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestInlineHTMLIsAnErrorNotAPanic
+    status: done
+    description: |
+      TestInlineHTMLIsAnErrorNotAPanic covers srd002-renderer-core R6.3, R6.12,
+      and AC20: raw HTML with no mapping is reported with its tag and position,
+      and no input crashes the caller. The panic this replaces was in the
+      position lookup an error message needs: an inline node's previous sibling
+      is inline, and asking it for line numbers aborted the build with a stack
+      trace instead of naming the file.
+    traces:
+      - srd002-renderer-core R6.12
+      - srd002-renderer-core R6.3
+      - srd002-renderer-core AC20
+  - name: 'the one HTML tag the manuscripts use renders as a LaTeX line break, in every spelling, wherever inline content goes'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestALineBreakTagRenders
+    status: done
+    description: |
+      TestALineBreakTagRenders covers srd002-renderer-core R6.10, R6.11, and
+      AC21: the one HTML tag the manuscripts use renders as a LaTeX line break,
+      in every spelling, wherever inline content goes.
+    traces:
+      - srd002-renderer-core R6.10
+      - srd002-renderer-core R6.11
+      - srd002-renderer-core AC21
+  - name: 'the mapping for comments is unchanged, in a paragraph and under a heading'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestCommentsStillConvert
+    status: done
+    description: |
+      TestCommentsStillConvert covers srd002-renderer-core R6.3 and AC21: the
+      mapping for comments is unchanged, in a paragraph and under a heading.
+    traces:
+      - srd002-renderer-core R6.3
+      - srd002-renderer-core AC21
+  - name: 'whatever a chapter holds, conversion returns a fragment or an error, and never crashes the caller'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestNoConstructPanics
+    status: done
+    description: |
+      TestNoConstructPanics covers srd002-renderer-core R6.12 and AC20 as a
+      property rather than a list: whatever a chapter holds, conversion returns
+      a fragment or an error, and never crashes the caller.
+    traces:
+      - srd002-renderer-core R6.12
+      - srd002-renderer-core AC20
   - name: 'the commands survive, the prose around them escapes'
     use_case: rel00.1-uc001-prose-chapter-to-fragment
     go_test: TestInlineControlSequencesPassThrough
