@@ -572,3 +572,81 @@ func TestAWholeChapterConverts(t *testing.T) {
 		}
 	}
 }
+
+// TestAChapterMayOpenWithFrontMatter covers srd002-renderer-core R6.6 and
+// AC19: Obsidian writes frontmatter on chapters as a matter of course, so a
+// chapter that opens with a block converts and its body renders exactly as the
+// same body without one.
+//
+// This blocked every chapter of three papers: the opening fence parsed as a
+// thematic break, which R6.4 correctly refused, and nothing read the block as
+// metadata.
+func TestAChapterMayOpenWithFrontMatter(t *testing.T) {
+	const body = "# Introduction {#sec:intro}\n\nProse citing [@du-2023].\n\n- a bullet\n"
+
+	cases := []struct {
+		name  string
+		block string
+	}{
+		{"tags, as the manuscripts write them", "---\ntags:\n  - autonomy-levels\n  - vision\n---\n\n"},
+		{"a single scalar property", "---\nstatus: draft\n---\n\n"},
+		{"an empty block", "---\n---\n\n"},
+		{"properties Obsidian maintains", "---\naliases:\n  - intro\ncssclass: wide\n---\n\n"},
+	}
+
+	bare := convert(t, body)
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if got := convert(t, testCase.block+body); got != bare {
+				t.Errorf("the body did not render as it does without the block\n got:\n%s\nwant:\n%s", got, bare)
+			}
+		})
+	}
+}
+
+// TestFrontMatterKeepsTheBodyWhereItIs covers srd002-renderer-core R6.8: a
+// position reported in the body is the position in the file, so an author sent
+// to a line finds the construct there.
+func TestFrontMatterKeepsTheBodyWhereItIs(t *testing.T) {
+	// The break sits on line 11 of the file: five lines of block, then a blank,
+	// a heading, a blank, prose, a blank, and the break.
+	const source = "---\ntags:\n  - a\n  - b\n---\n\n# Introduction\n\nProse.\n\n---\n"
+
+	failure := convertError(t, source)
+	if failure.Line != 11 {
+		t.Errorf("Line = %d, want 11: the block's lines are kept so the body keeps its positions", failure.Line)
+	}
+}
+
+// TestOnlyAnOpeningBlockIsFrontMatter covers srd002-renderer-core R6.7 and
+// R6.4: a run of three hyphens below the opening is a thematic break, because
+// a chapter carries at most one block and it is the first thing in the file.
+func TestOnlyAnOpeningBlockIsFrontMatter(t *testing.T) {
+	cases := []string{
+		"# Introduction\n\nProse.\n\n---\n\nMore prose.\n",
+		"---\ntags:\n  - a\n---\n\n# Introduction\n\n---\n\nProse.\n",
+		"Prose before anything.\n\n---\ntags:\n  - a\n---\n",
+	}
+
+	for _, source := range cases {
+		failure := convertError(t, source)
+		if failure.Construct != "thematic break" {
+			t.Errorf("Construct = %q for:\n%s", failure.Construct, source)
+		}
+	}
+}
+
+// TestAChapterWithoutFrontMatterIsUnchanged covers srd002-renderer-core R6.6:
+// the drop reaches only a block that opens the source, so a chapter carrying
+// none converts byte for byte as it did before the rule existed.
+func TestAChapterWithoutFrontMatterIsUnchanged(t *testing.T) {
+	const source = "# A heading\n\nA paragraph with *emphasis*.\n\n- one\n- two\n\n> A quotation.\n"
+	const want = "\\section{A heading}\\label{a-heading}\n\n" +
+		"A paragraph with \\emph{emphasis}.\n\n" +
+		"\\begin{itemize}\n\\item one\n\\item two\n\\end{itemize}\n\n" +
+		"\\begin{quote}\nA quotation.\n\\end{quote}\n"
+
+	if got := convert(t, source); got != want {
+		t.Errorf("Convert() =\n%q\nwant\n%q", got, want)
+	}
+}

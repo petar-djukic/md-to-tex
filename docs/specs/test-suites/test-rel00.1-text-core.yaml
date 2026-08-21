@@ -552,6 +552,52 @@ test_cases:
       construct each; this one takes them together, which is what the criterion
       asserts and what a chapter actually looks like.
     traces:
+  - name: 'Obsidian writes frontmatter on chapters as a matter of course, so a chapter that opens with a block converts and its bod'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestAChapterMayOpenWithFrontMatter
+    status: done
+    description: |
+      TestAChapterMayOpenWithFrontMatter covers srd002-renderer-core R6.6 and
+      AC19: Obsidian writes frontmatter on chapters as a matter of course, so a
+      chapter that opens with a block converts and its body renders exactly as
+      the same body without one. This blocked every chapter of three papers: the
+      opening fence parsed as a thematic break, which R6.4 correctly refused,
+      and nothing read the block as metadata.
+    traces:
+      - srd002-renderer-core R6.6
+      - srd002-renderer-core AC19
+  - name: 'a position reported in the body is the position in the file, so an author sent to a line finds the construct there'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestFrontMatterKeepsTheBodyWhereItIs
+    status: done
+    description: |
+      TestFrontMatterKeepsTheBodyWhereItIs covers srd002-renderer-core R6.8: a
+      position reported in the body is the position in the file, so an author
+      sent to a line finds the construct there.
+    traces:
+      - srd002-renderer-core R6.8
+  - name: 'a run of three hyphens below the opening is a thematic break, because a chapter carries at most one block and it is the '
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestOnlyAnOpeningBlockIsFrontMatter
+    status: done
+    description: |
+      TestOnlyAnOpeningBlockIsFrontMatter covers srd002-renderer-core R6.7 and
+      R6.4: a run of three hyphens below the opening is a thematic break,
+      because a chapter carries at most one block and it is the first thing in
+      the file.
+    traces:
+      - srd002-renderer-core R6.4
+      - srd002-renderer-core R6.7
+  - name: 'the drop reaches only a block that opens the source, so a chapter carrying none converts byte for byte as it did before '
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestAChapterWithoutFrontMatterIsUnchanged
+    status: done
+    description: |
+      TestAChapterWithoutFrontMatterIsUnchanged covers srd002-renderer-core
+      R6.6: the drop reaches only a block that opens the source, so a chapter
+      carrying none converts byte for byte as it did before the rule existed.
+    traces:
+      - srd002-renderer-core R6.6
   - name: 'the commands survive, the prose around them escapes'
     use_case: rel00.1-uc001-prose-chapter-to-fragment
     go_test: TestInlineControlSequencesPassThrough
