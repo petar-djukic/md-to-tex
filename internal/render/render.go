@@ -152,20 +152,63 @@ func (w *walker) offsetOf(node ast.Node) int {
 	if node.Type() == ast.TypeBlock && node.Lines().Len() > 0 {
 		return node.Lines().At(0).Start
 	}
+
+	// An inline node carries its own position. Reading it here is what keeps
+	// a construct reported rather than crashed: Lines panics on an inline
+	// node, and the lookup that panics is the one an error message needs.
+	if offset, ok := inlineOffset(node); ok {
+		return offset
+	}
+
 	for child := node.FirstChild(); child != nil; child = child.NextSibling() {
-		if text, ok := child.(*ast.Text); ok {
-			return text.Segment.Start
+		if offset, ok := inlineOffset(child); ok {
+			return offset
 		}
 	}
-	if previous := node.PreviousSibling(); previous != nil {
-		if lines := previous.Lines(); lines.Len() > 0 {
-			return firstContentAfter(w.source, lines.At(lines.Len()-1).Stop)
-		}
+	if previous := blockBefore(node); previous != nil {
+		lines := previous.Lines()
+		return firstContentAfter(w.source, lines.At(lines.Len()-1).Stop)
 	}
-	if parent := node.Parent(); parent != nil && parent.Lines().Len() > 0 {
+	if parent := blockAround(node); parent != nil {
 		return parent.Lines().At(0).Start
 	}
 	return 0
+}
+
+// inlineOffset reports where an inline node begins, for the kinds that carry
+// their own source position.
+func inlineOffset(node ast.Node) (int, bool) {
+	switch typed := node.(type) {
+	case *ast.Text:
+		return typed.Segment.Start, true
+	case *ast.RawHTML:
+		if typed.Segments.Len() > 0 {
+			return typed.Segments.At(0).Start, true
+		}
+	}
+	return 0, false
+}
+
+// blockBefore returns the nearest preceding sibling that is a block carrying
+// lines. Lines panics on an inline node, so the kind is checked first.
+func blockBefore(node ast.Node) ast.Node {
+	for previous := node.PreviousSibling(); previous != nil; previous = previous.PreviousSibling() {
+		if previous.Type() == ast.TypeBlock && previous.Lines().Len() > 0 {
+			return previous
+		}
+	}
+	return nil
+}
+
+// blockAround returns the nearest ancestor that is a block carrying lines, for
+// the same reason.
+func blockAround(node ast.Node) ast.Node {
+	for parent := node.Parent(); parent != nil; parent = parent.Parent() {
+		if parent.Type() == ast.TypeBlock && parent.Lines().Len() > 0 {
+			return parent
+		}
+	}
+	return nil
 }
 
 // firstContentAfter returns the start of the first line after offset that

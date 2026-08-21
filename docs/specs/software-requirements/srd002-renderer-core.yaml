@@ -97,7 +97,10 @@ requirements:
     items:
       - R6.1: An image block, a table, a citation, and raw LaTeX are dispatched to the components that own them (srd004-figures, srd005-tables, srd006-citations, srd007-passthrough). The core neither duplicates nor overrides their output.
       - R6.2: 'No renderer writes a text node directly: text reaches the buffer through the escaper or through the passthrough renderer, which declares it raw. A renderer that writes text by any other route is a defect in this component even when its output happens to compile.'
-      - R6.3: An HTML comment is dropped, so the backlink comments the manuscripts carry under their headings do not reach the LaTeX. Any other raw HTML is an error under R1.3.
+      - R6.3: An HTML comment is dropped, so the backlink comments the manuscripts carry under their headings do not reach the LaTeX. Raw HTML other than a comment and the line break R6.10 names is an error under R1.3, naming the tag.
+      - R6.10: 'A line break tag renders as a LaTeX line break, in its three spellings and whatever the case. It is the one HTML tag the manuscripts use, stacking values inside a table cell, and a paragraph column takes the LaTeX form.'
+      - R6.11: 'The line break is mapped rather than left to raw LaTeX because the alternative degrades the source. An author can already write the LaTeX form and it converts, but Obsidian renders it as literal text where it renders the tag as a break, and markdown that the editor cannot render is the failure this library exists to avoid (srd004-figures problem).'
+      - R6.12: 'An error naming a construct names the tag or the kind that failed, so a build log points at what to change. Reporting a position must never cost more than the error itself: an inline node carries its own position, and asking a block for line numbers it does not have would crash the caller in place of reporting the construct.'
       - R6.4: A construct with no mapping - a thematic break, a definition list, a footnote, a task list item - is an error under R1.3 naming the construct. Silent omission is forbidden.
       - R6.5: The set of mapped constructs is what the manuscripts use. Widening it is an SRD change, and an author who needs a construct today writes it as raw LaTeX (srd007-passthrough).
       - R6.6: 'A YAML frontmatter block opening the source is a chapter''s metadata and is dropped, as an HTML comment is under R6.3. Obsidian writes one on chapters as a matter of course -- tags, aliases, and properties, maintained by the editor''s own panel -- and none of it belongs in the LaTeX.'
@@ -139,6 +142,12 @@ acceptance_criteria:
   - id: AC4
     criterion: An HTML comment under a heading does not appear in the output, and the heading's identifier appears as a label on the sectioning line.
     traces: [R3.4, R6.3]
+  - id: AC20
+    criterion: 'Inline raw HTML in a paragraph and in a table cell is an error naming the tag and its position; no input panics, whatever the node the failure is reported for.'
+    traces: [R6.3, R6.12]
+  - id: AC21
+    criterion: 'A line break tag inside a table cell and in a paragraph renders as a LaTeX line break in all three spellings, and an HTML comment still converts as it did.'
+    traces: [R6.10, R6.11]
   - id: AC7
     criterion: A heading with no identifier attribute emits the label its text slugs to, so a reference written against the pandoc-derived slug resolves; two headings slugging to the same identifier fail with an error naming both.
     traces: [R3.5, R3.6]

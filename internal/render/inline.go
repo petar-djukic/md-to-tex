@@ -1,6 +1,8 @@
 package render
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/yuin/goldmark/ast"
@@ -53,7 +55,7 @@ func (w *walker) inline(builder *strings.Builder, node ast.Node) error {
 	case *cite.Node:
 		return w.citation(builder, typed)
 	case *ast.RawHTML:
-		return w.rawHTML(typed)
+		return w.rawHTML(builder, typed)
 	case *ast.Image:
 		return w.fail(w.offsetOf(typed), "inline image",
 			"an image beside other content is not a float; put it in a paragraph of its own (srd004-figures R1.1)")
@@ -153,14 +155,30 @@ func (w *walker) citation(builder *strings.Builder, node *cite.Node) error {
 	return cite.Render(builder, node)
 }
 
-// rawHTML drops a comment and reports anything else
-// (srd002-renderer-core R6.3).
-func (w *walker) rawHTML(node *ast.RawHTML) error {
+// rawHTML drops a comment, renders a line break, and reports anything else
+// (srd002-renderer-core R6.3, R6.10).
+func (w *walker) rawHTML(builder *strings.Builder, node *ast.RawHTML) error {
+	tag := ""
 	if node.Segments.Len() > 0 {
 		segment := node.Segments.At(0)
-		if strings.HasPrefix(string(segment.Value(w.source)), "<!--") {
-			return nil
-		}
+		tag = string(segment.Value(w.source))
 	}
-	return w.fail(w.offsetOf(node), "raw HTML", "only comments are dropped; LaTeX is written as raw LaTeX")
+
+	switch {
+	case strings.HasPrefix(tag, "<!--"):
+		return nil
+	case isLineBreakTag(tag):
+		builder.WriteString(`\newline `)
+		return nil
+	}
+	return w.fail(w.offsetOf(node), "raw HTML",
+		fmt.Sprintf("%s has no mapping; only a comment and a line break are read", tag))
+}
+
+// lineBreakTag matches the three spellings of a line break, which is the one
+// HTML tag the manuscripts use (srd002-renderer-core R6.10).
+var lineBreakTag = regexp.MustCompile(`(?i)\A<br\s*/?>\z`)
+
+func isLineBreakTag(tag string) bool {
+	return lineBreakTag.MatchString(strings.TrimSpace(tag))
 }

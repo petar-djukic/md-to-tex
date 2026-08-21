@@ -650,3 +650,121 @@ func TestAChapterWithoutFrontMatterIsUnchanged(t *testing.T) {
 		t.Errorf("Convert() =\n%q\nwant\n%q", got, want)
 	}
 }
+
+// TestInlineHTMLIsAnErrorNotAPanic covers srd002-renderer-core R6.3, R6.12,
+// and AC20: raw HTML with no mapping is reported with its tag and position,
+// and no input crashes the caller.
+//
+// The panic this replaces was in the position lookup an error message needs:
+// an inline node's previous sibling is inline, and asking it for line numbers
+// aborted the build with a stack trace instead of naming the file.
+func TestInlineHTMLIsAnErrorNotAPanic(t *testing.T) {
+	cases := []struct {
+		name   string
+		source string
+		tag    string
+		line   int
+	}{
+		{"in a paragraph", "Prose.\n\nSome <span>markup</span> here.\n", "<span>", 3},
+		{"opening the paragraph", "Prose.\n\n<em>markup</em> first.\n", "<em>", 3},
+		{
+			name:   "in a table cell",
+			source: "Prose.\n\n| A | B |\n|---|---|\n| x | <span>y</span> |\n\nTable: C. {#tab:c}\n",
+			tag:    "<span>",
+			// The cell sits on the fifth line: prose, a blank, the header, the
+			// alignment row, then the body row that carries the tag.
+			line: 5,
+		},
+		{"in a heading", "Prose.\n\n# A <span>heading</span>\n", "<span>", 3},
+		{"in a figure caption", "Prose.\n\n![A <span>caption</span>.](fig/a.pdf){#fig:a}\n", "<span>", 3},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			failure := convertError(t, testCase.source)
+
+			if failure.Construct != "raw HTML" {
+				t.Errorf("Construct = %q, want raw HTML", failure.Construct)
+			}
+			if !strings.Contains(failure.Detail, testCase.tag) {
+				t.Errorf("Detail = %q, want it to name %q", failure.Detail, testCase.tag)
+			}
+			if failure.Line != testCase.line {
+				t.Errorf("Line = %d, want %d", failure.Line, testCase.line)
+			}
+		})
+	}
+}
+
+// TestALineBreakTagRenders covers srd002-renderer-core R6.10, R6.11, and AC21:
+// the one HTML tag the manuscripts use renders as a LaTeX line break, in every
+// spelling, wherever inline content goes.
+func TestALineBreakTagRenders(t *testing.T) {
+	for _, spelling := range []string{"<br>", "<br/>", "<br />", "<BR>", "<Br />"} {
+		got := convert(t, "Stacked"+spelling+"values.\n")
+		if got != `Stacked\newline values.`+"\n" {
+			t.Errorf("Convert() with %q = %q", spelling, got)
+		}
+	}
+
+	// The cell is where the manuscripts use it, stacking values in one column.
+	cell := convert(t, "| A | B |\n|---|---|\n| x | one<br>two |\n\nTable: C. {#tab:c}\n")
+	if !strings.Contains(cell, `x & one\newline two \\`) {
+		t.Errorf("the cell did not render the break:\n%s", cell)
+	}
+}
+
+// TestCommentsStillConvert covers srd002-renderer-core R6.3 and AC21: the
+// mapping for comments is unchanged, in a paragraph and under a heading.
+func TestCommentsStillConvert(t *testing.T) {
+	paragraph := convert(t, "Prose with <!--a note--> inside.\n")
+	if strings.Contains(paragraph, "note") || strings.Contains(paragraph, "<!--") {
+		t.Errorf("the comment reached the fragment: %q", paragraph)
+	}
+
+	heading := convert(t, "# A heading\n\n<!-- S1 -- governed by an SRD -->\n\nProse.\n")
+	if strings.Contains(heading, "governed by") {
+		t.Errorf("the backlink comment reached the fragment:\n%s", heading)
+	}
+	if !strings.Contains(heading, "Prose.") {
+		t.Errorf("the prose after the comment was lost:\n%s", heading)
+	}
+}
+
+// TestNoConstructPanics covers srd002-renderer-core R6.12 and AC20 as a
+// property rather than a list: whatever a chapter holds, conversion returns a
+// fragment or an error, and never crashes the caller.
+func TestNoConstructPanics(t *testing.T) {
+	sources := []string{
+		"Prose with <span>markup</span>.\n",
+		"<div>a block</div>\n",
+		"| A |\n|---|\n| <span>x</span> |\n\nTable: C. {#tab:c}\n",
+		"> A quotation with <em>markup</em>.\n",
+		"- an item with <span>markup</span>\n",
+		"# <span>A heading</span>\n",
+		"![<span>alt</span>](fig/a.pdf){#fig:a}\n",
+		"Prose.\n\n---\n",
+		"##### Too deep\n",
+		"Prose with a<br>break and <span>markup</span>.\n",
+	}
+
+	for _, source := range sources {
+		func() {
+			defer func() {
+				if recovered := recover(); recovered != nil {
+					t.Errorf("Convert(%q) panicked: %v", source, recovered)
+				}
+			}()
+			if _, _, err := Convert([]byte(source), "chapter.md", Config{}); err != nil {
+				var failure *Error
+				if !asRenderError(err, &failure) {
+					t.Errorf("Convert(%q) returned %T, want a positioned *Error", source, err)
+					return
+				}
+				if failure.Line < 1 {
+					t.Errorf("Convert(%q) reported line %d", source, failure.Line)
+				}
+			}
+		}()
+	}
+}
