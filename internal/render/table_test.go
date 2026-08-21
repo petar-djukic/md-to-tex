@@ -321,3 +321,73 @@ func TestTableEmitsNoForbiddenForm(t *testing.T) {
 		}
 	}
 }
+
+// TestTheWideClassForcesTheStarredFloat covers srd005-tables R4.6, R4.8, and
+// AC9: a caption line carrying the class spans both columns whatever the
+// measurement would have chosen.
+//
+// The fixture is the tutorial table that found this gap: three columns, a
+// longest cell of 99 characters, and an estimated height of 34 lines, so it
+// falls under every bar R4.1 states and renders in one column without the
+// class.
+func TestTheWideClassForcesTheStarredFloat(t *testing.T) {
+	const body = "| Survey or tutorial | Scope | What this article adds |\n" +
+		"|---|---|---|\n" +
+		"| Coronado et al., 2022 | Zero-touch automation for 5G and 6G networks | Grades by who supplies the software, not by platform capability |\n" +
+		"| Leivadeas and Falkner, 2023 | Intent-based networking lifecycle | Makes intent the interface of a generative loop |\n" +
+		"| Boateng et al., 2024 | LLMs across network and service management | Grades agent capability by autonomy level |\n\n"
+
+	measured := convert(t, body+"Table: Adjacent surveys and what this article adds. {#tab:surveys}\n")
+	if !strings.Contains(measured, `\begin{table}[!t]`) {
+		t.Fatalf("the fixture no longer measures to one column, so it cannot show the class overriding:\n%s", measured)
+	}
+
+	stated := convert(t, body+"Table: Adjacent surveys and what this article adds. {#tab:surveys .wide}\n")
+	if !strings.Contains(stated, `\begin{table*}[!t]`) {
+		t.Errorf("the class did not force the starred float:\n%s", stated)
+	}
+	if !strings.Contains(stated, `\begin{tabularx}{\textwidth}`) {
+		t.Errorf("the starred float is not at the text width:\n%s", stated)
+	}
+	if !strings.Contains(stated, `\end{table*}`) {
+		t.Errorf("the float does not close as a starred one:\n%s", stated)
+	}
+}
+
+// TestTheClassForcesSpanningAndNothingElse covers srd005-tables R4.7: without
+// the class a table is measured exactly as before, and there is no class
+// holding a table in one column that the measurement would widen.
+func TestTheClassForcesSpanningAndNothingElse(t *testing.T) {
+	// A table the measurement already widens keeps spanning, class or not.
+	widened := convert(t, levelsTable)
+	if !strings.Contains(widened, `\begin{table*}`) {
+		t.Fatalf("the five-column fixture no longer spans:\n%s", widened)
+	}
+
+	// The class on an already-spanning table changes nothing.
+	stated := strings.Replace(levelsTable, "{#tab:levels}", "{#tab:levels .wide}", 1)
+	if got := convert(t, stated); got != widened {
+		t.Errorf("the class changed a table that already spanned:\n got:\n%s\nwant:\n%s", got, widened)
+	}
+}
+
+// TestNoExistingTableMoves covers srd005-tables R4.7 and AC9: a caption line
+// without the class renders exactly what it rendered before the class existed.
+//
+// The two SRD fixtures are the check that matters, because their expected
+// output is stated in the specification: if either moved, the class would have
+// changed behavior nobody asked it to change.
+func TestNoExistingTableMoves(t *testing.T) {
+	survey := convert(t, surveyTable)
+	if !strings.Contains(survey, `\begin{table}[!t]`) || strings.Contains(survey, `table*`) {
+		t.Errorf("the three-column fixture moved:\n%s", survey)
+	}
+	if !strings.Contains(survey, `\begin{tabularx}{\columnwidth}`) {
+		t.Errorf("the three-column fixture changed its measure:\n%s", survey)
+	}
+
+	levels := convert(t, levelsTable)
+	if !strings.Contains(levels, `\begin{table*}[!t]`) {
+		t.Errorf("the five-column fixture moved:\n%s", levels)
+	}
+}

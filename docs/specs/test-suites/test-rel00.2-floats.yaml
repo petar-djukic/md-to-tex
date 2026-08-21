@@ -301,6 +301,44 @@ test_cases:
       - srd005-tables R5.2
       - srd005-tables R5.3
       - srd005-tables AC5
+  - name: 'a caption line carrying the class spans both columns whatever the measurement would have chosen. The fixture is the tuto'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTheWideClassForcesTheStarredFloat
+    status: done
+    description: |
+      TestTheWideClassForcesTheStarredFloat covers srd005-tables R4.6, R4.8, and
+      AC9: a caption line carrying the class spans both columns whatever the
+      measurement would have chosen. The fixture is the tutorial table that
+      found this gap: three columns, a longest cell of 99 characters, and an
+      estimated height of 34 lines, so it falls under every bar R4.1 states and
+      renders in one column without the class.
+    traces:
+      - srd005-tables R4.6
+      - srd005-tables R4.8
+      - srd005-tables AC9
+  - name: 'without the class a table is measured exactly as before, and there is no class holding a table in one column that the me'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestTheClassForcesSpanningAndNothingElse
+    status: done
+    description: |
+      TestTheClassForcesSpanningAndNothingElse covers srd005-tables R4.7:
+      without the class a table is measured exactly as before, and there is no
+      class holding a table in one column that the measurement would widen.
+    traces:
+      - srd005-tables R4.7
+  - name: 'a caption line without the class renders exactly what it rendered before the class existed. The two SRD fixtures are the'
+    use_case: rel00.2-uc001-floats-in-two-columns
+    go_test: TestNoExistingTableMoves
+    status: done
+    description: |
+      TestNoExistingTableMoves covers srd005-tables R4.7 and AC9: a caption line
+      without the class renders exactly what it rendered before the class
+      existed. The two SRD fixtures are the check that matters, because their
+      expected output is stated in the specification: if either moved, the class
+      would have changed behavior nobody asked it to change.
+    traces:
+      - srd005-tables R4.7
+      - srd005-tables AC9
   - name: 'no fixture the float renderers emit carries a form the SRD forbids, the bold header row among them'
     use_case: rel00.2-uc001-floats-in-two-columns
     go_test: TestEmittedFloatsCarryNoForbiddenForm
