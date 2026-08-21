@@ -100,6 +100,10 @@ requirements:
       - R6.3: An HTML comment is dropped, so the backlink comments the manuscripts carry under their headings do not reach the LaTeX. Any other raw HTML is an error under R1.3.
       - R6.4: A construct with no mapping - a thematic break, a definition list, a footnote, a task list item - is an error under R1.3 naming the construct. Silent omission is forbidden.
       - R6.5: The set of mapped constructs is what the manuscripts use. Widening it is an SRD change, and an author who needs a construct today writes it as raw LaTeX (srd007-passthrough).
+      - R6.6: 'A YAML frontmatter block opening the source is a chapter''s metadata and is dropped, as an HTML comment is under R6.3. Obsidian writes one on chapters as a matter of course -- tags, aliases, and properties, maintained by the editor''s own panel -- and none of it belongs in the LaTeX.'
+      - R6.7: 'The block is dropped only where it opens the source. A run of three hyphens anywhere below is a thematic break and is reported under R6.4, because a chapter carries at most one frontmatter block and it is the first thing in the file.'
+      - R6.8: 'Dropping the block leaves the lines below it where they were, so a position reported in the body is the position in the file. Removing the lines outright would report an error at the twelfth line of a chapter as the fifth line of what remained.'
+      - R6.9: 'The block is read by the same reader the title page uses (srd001-front-matter R1.1), so the two paths cannot disagree about where a block ends. What each does with it differs: the title page renders from it, and a chapter drops it. Surfacing a chapter''s metadata to the caller is a later change if a caller needs it; nothing in the pipeline reads chapter tags today.'
   R7:
     title: Emitted labels and collisions across chapters
     items:
@@ -129,6 +133,9 @@ acceptance_criteria:
   - id: AC3
     criterion: A level-five heading, a thematic break, and a raw HTML block each fail with an error naming the source, the line, and the construct.
     traces: [R1.3, R3.2, R6.3, R6.4]
+  - id: AC19
+    criterion: 'A chapter opening with a YAML frontmatter block converts, and its body renders exactly as the same body without the block; a run of three hyphens below the opening still fails under R6.4, reported at its line in the file.'
+    traces: [R6.6, R6.7, R6.8, R6.9]
   - id: AC4
     criterion: An HTML comment under a heading does not appear in the output, and the heading's identifier appears as a label on the sectioning line.
     traces: [R3.4, R6.3]

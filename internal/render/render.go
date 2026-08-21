@@ -87,6 +87,10 @@ var markdown = goldmark.New(
 // Conversion holds no state between calls, so it is deterministic and safe to
 // call concurrently (R1.2).
 func Convert(source []byte, name string, config Config) ([]byte, []Label, error) {
+	// A chapter's frontmatter is metadata for the editor, not content for the
+	// paper (srd002-renderer-core R6.6).
+	source = dropFrontMatter(source)
+
 	walker := &walker{source: source, name: name, config: config, seen: map[string]string{}}
 
 	context := parser.NewContext()

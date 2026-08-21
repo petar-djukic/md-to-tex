@@ -65,7 +65,10 @@ func (a *Author) UnmarshalYAML(value *yaml.Node) error {
 }
 
 var (
-	frontmatterBlock = regexp.MustCompile(`(?s)\A---\r?\n(.*?)\r?\n---\r?\n`)
+	// The content section is optional: Obsidian leaves an empty block behind
+	// when the last property is removed, and a block that did not match here
+	// would reach the parser as a thematic break.
+	frontmatterBlock = regexp.MustCompile(`(?s)\A---\r?\n((?:.*?\r?\n)?)---\r?\n`)
 	// The title page marks its abstract with a bold-italic run rather than a
 	// heading, so it does not become a numbered section
 	// (srd001-front-matter R1.7).
@@ -75,13 +78,32 @@ var (
 	authorEmail = regexp.MustCompile(`\[([^\]]+)\]\(mailto:[^)]+\)`)
 )
 
+// Split separates a leading YAML frontmatter block from the body below it.
+//
+// It reports the block's own bytes, the body, and how far into the source the
+// body begins, so a caller that renders the body can keep the source's line
+// numbers: an error at the twelfth line of a file is reported at the twelfth
+// line, not at the fifth line of what remains after the block is removed.
+//
+// Both paths through the library read this construct. The title page decodes
+// the block as the metadata it renders from (srd001-front-matter R1.1), and a
+// chapter drops it (srd002-renderer-core R6.6); one reader serves both, so the
+// two cannot disagree about where a block ends.
+func Split(source []byte) (block, body []byte, offset int, found bool) {
+	match := frontmatterBlock.FindSubmatchIndex(source)
+	if match == nil {
+		return nil, source, 0, false
+	}
+	return source[match[2]:match[3]], source[match[1]:], match[1], true
+}
+
 // Read parses a title page. The name appears in error messages and nowhere
 // else; Read opens no file (srd001-front-matter R1.1).
 func Read(source []byte, name string) (Page, error) {
 	var page Page
 
-	match := frontmatterBlock.FindSubmatch(source)
-	if match == nil {
+	block, body, _, found := Split(source)
+	if !found {
 		return page, fmt.Errorf("%s: has no YAML frontmatter", name)
 	}
 
@@ -89,17 +111,16 @@ func Read(source []byte, name string) (Page, error) {
 	// into the struct would keep the last value silently
 	// (srd001-front-matter R1.3).
 	var fields map[string]any
-	if err := yaml.Unmarshal(match[1], &fields); err != nil {
+	if err := yaml.Unmarshal(block, &fields); err != nil {
 		return page, fmt.Errorf("%s frontmatter: %w", name, err)
 	}
-	if err := yaml.Unmarshal(match[1], &page); err != nil {
+	if err := yaml.Unmarshal(block, &page); err != nil {
 		return page, fmt.Errorf("%s frontmatter: %w", name, err)
 	}
 	if strings.TrimSpace(page.Title) == "" {
 		return page, fmt.Errorf("%s frontmatter: states no title", name)
 	}
 
-	body := source[len(match[0]):]
 	if strings.TrimSpace(page.Abstract) != "" {
 		// The abstract came from the frontmatter, so whatever is in the body
 		// is something else and belongs after it (srd001-front-matter R1.6).
