@@ -43,7 +43,10 @@ func (w *walker) table(node *east.Table, caption tableCaption) error {
 		}
 	}
 
-	wide := spansBothColumns(columns, rows, body)
+	// The class states what the measurement cannot see, so it decides on its
+	// own; without it the table is measured exactly as before
+	// (srd005-tables R4.6, R4.7).
+	wide := caption.wide || spansBothColumns(columns, rows, body)
 	environment, measure := "table", `\columnwidth`
 	if wide {
 		environment, measure = "table*", `\textwidth`

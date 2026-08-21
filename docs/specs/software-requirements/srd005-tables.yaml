@@ -94,6 +94,9 @@ requirements:
       - R4.3: 'Column count alone is not the test. A two-column table of 200-character cells is as cramped as a five-column table of short ones, and a fifteen-row table of modest cells still runs half a column as a ribbon.'
       - R4.4: The bars are set high on purpose. Spanning turns a table into a float that leaves its text behind, so spanning everything is worse than spanning nothing.
       - R4.5: 'A spanning table uses the starred table environment and the text width; a non-spanning table uses the plain environment and the column width. Both are floats. The starred form costs the caption on the way back, which srd009-backport-compatibility R3.7 states as its one admitted exception: a caption edit to a wide table does not reach the markdown.'
+      - R4.6: 'A caption line may carry the wide class in its attribute block, and a table that carries it spans both columns whatever the measurement would have chosen. The class states what the measurement cannot see: an author knows a seven-row table of long cells reads as a ribbon in one column, and R4.1 counts only columns, cell width, and estimated height.'
+      - R4.7: 'The class forces spanning and nothing else. A table without it is measured exactly as before, and there is no class holding a table in one column that the measurement would widen: figures carry one class (srd004-figures R3.1), the manuscripts have produced a table that must span and none that must stay narrow, and a mapping widens for what the manuscripts use (srd002-renderer-core R6.5).'
+      - R4.8: 'An author stating the class chooses the caption trade knowingly. A spanning table loses its caption through the backport reader (srd009-backport-compatibility R3.7), and a choice an author makes in the source is better than the same choice made for them by a threshold they cannot see.'
     examples:
       - markdown: |
           | Level | Who writes it | Approval | Coverage | Example |
@@ -144,6 +147,9 @@ acceptance_criteria:
   - id: AC3
     criterion: A five-column table, a two-column table of 200-character cells, and a fifteen-row table of modest cells each select the starred environment; a small three-column table does not.
     traces: [R4.1, R4.2, R4.3, R4.4, R4.5]
+  - id: AC9
+    criterion: 'A caption line carrying the wide class renders the starred float at the text width even where the measurement would have chosen the plain one, and a caption line without it renders exactly what it rendered before the class existed.'
+    traces: [R4.6, R4.7, R4.8]
   - id: AC4
     criterion: A pipe table with no caption line, and a caption line with no identifier, each fail with an error naming the file and line.
     traces: [R1.4, R1.5]

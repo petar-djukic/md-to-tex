@@ -11,11 +11,15 @@ import (
 // (srd005-tables R1.1).
 const captionPrefix = "Table:"
 
-// tableCaption is a caption line: the text and the identifier that becomes the
-// float's label.
+// tableCaption is a caption line: the text, the identifier that becomes the
+// float's label, and whether the author asked for the two-column float.
 type tableCaption struct {
 	text       string
 	identifier string
+
+	// wide is the class an author states when the measurement cannot see what
+	// they know about the table (srd005-tables R4.6).
+	wide bool
 }
 
 // captionFor reads the caption line that follows a table, and reports whether
@@ -39,14 +43,14 @@ func (w *walker) captionFor(offset int, next ast.Node) (tableCaption, bool, erro
 	}
 
 	body := strings.TrimSpace(strings.TrimPrefix(raw, captionPrefix))
-	identifier := ""
+	identifier, wide := "", false
 	if strings.HasSuffix(body, "}") {
 		if open := strings.LastIndex(body, "{"); open >= 0 {
 			parsed, err := parseAttributes(body[open:])
 			if err != nil {
 				return tableCaption{}, false, w.fail(offset, "table", err.Error())
 			}
-			identifier = parsed.identifier
+			identifier, wide = parsed.identifier, parsed.wide
 			body = strings.TrimSpace(body[:open])
 		}
 	}
@@ -60,7 +64,7 @@ func (w *walker) captionFor(offset int, next ast.Node) (tableCaption, bool, erro
 	if err != nil {
 		return tableCaption{}, false, err
 	}
-	return tableCaption{text: rendered, identifier: identifier}, true, nil
+	return tableCaption{text: rendered, identifier: identifier, wide: wide}, true, nil
 }
 
 // inlineFragment renders a run of markdown that is not a block of its own -- a
