@@ -768,3 +768,104 @@ func TestNoConstructPanics(t *testing.T) {
 		}()
 	}
 }
+
+// TestAnInternalAnchorRendersACrossReference covers srd002-renderer-core R4.5,
+// R4.6, and AC22: a target beginning with a hash names a label in the document,
+// not a destination outside it.
+//
+// The failure this replaces compiled and warned about nothing: href handed the
+// anchor to the viewer as an external target, so the text set as a link and
+// went nowhere. The first fixture is the sentence and the target from the
+// paper that found it.
+func TestAnInternalAnchorRendersACrossReference(t *testing.T) {
+	cases := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{
+			name:   "the sentence from the paper",
+			source: "In the [supervisory deployment](#fig-approach1-supervisory-deployment), the Business Layer generates the intent.\n",
+			want:   `\hyperref[fig-approach1-supervisory-deployment]{supervisory deployment}`,
+		},
+		{
+			name:   "a section anchor",
+			source: "See [the governed loop](#sec:loop) for the detail.\n",
+			want:   `\hyperref[sec:loop]{the governed loop}`,
+		},
+		{
+			name:   "text carrying inline markup",
+			source: "See [the *governed* loop](#sec:loop).\n",
+			want:   `\hyperref[sec:loop]{the \emph{governed} loop}`,
+		},
+		{
+			name:   "text that is the anchor itself",
+			source: "See [#fig-x](#fig-x).\n",
+			want:   `\hyperref[fig-x]{\#fig-x}`,
+		},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			got := convert(t, testCase.source)
+			if !strings.Contains(got, testCase.want) {
+				t.Errorf("Convert() = %q, want it to carry %q", got, testCase.want)
+			}
+			if strings.Contains(got, `\href{#`) || strings.Contains(got, `\url{#`) {
+				t.Errorf("the anchor was rendered as an external destination:\n%s", got)
+			}
+		})
+	}
+}
+
+// TestLinksToOtherTargetsAreUnchanged covers srd002-renderer-core R4.5 and
+// AC22: only a hash target moves, so every other link renders as it did.
+func TestLinksToOtherTargetsAreUnchanged(t *testing.T) {
+	cases := []struct {
+		source string
+		want   string
+	}{
+		{"See [the survey](https://example.com/survey).\n", `\href{https://example.com/survey}{the survey}`},
+		{"See [https://example.com](https://example.com).\n", `\url{https://example.com}`},
+		{"See [the file](../other/chapter.md).\n", `\href{../other/chapter.md}{the file}`},
+		{"Mail [the author](mailto:a@example.com).\n", `\href{mailto:a@example.com}{the author}`},
+	}
+
+	for _, testCase := range cases {
+		got := convert(t, testCase.source)
+		if !strings.Contains(got, testCase.want) {
+			t.Errorf("Convert(%q) = %q, want it to carry %q", testCase.source, got, testCase.want)
+		}
+		if strings.Contains(got, `\hyperref`) {
+			t.Errorf("Convert(%q) rendered a cross-reference:\n%s", testCase.source, got)
+		}
+	}
+}
+
+// TestABareAnchorIsAnError covers srd002-renderer-core R4.7 and AC22: an
+// anchor that names nothing can reference nothing.
+func TestABareAnchorIsAnError(t *testing.T) {
+	failure := convertError(t, "Prose.\n\nA bare [anchor](#) here.\n")
+
+	if failure.Construct != "link" {
+		t.Errorf("Construct = %q, want link", failure.Construct)
+	}
+	if !strings.Contains(failure.Detail, "can reference nothing") {
+		t.Errorf("Detail = %q", failure.Detail)
+	}
+	if failure.Line != 3 {
+		t.Errorf("Line = %d, want 3", failure.Line)
+	}
+}
+
+// TestAnAnchorIsNotCheckedAgainstTheChapter covers srd002-renderer-core R4.8:
+// conversion sees one chapter, and the manuscripts reference figures across
+// chapters, so a target this chapter does not define still converts.
+func TestAnAnchorIsNotCheckedAgainstTheChapter(t *testing.T) {
+	const source = "# A heading {#sec:here}\n\nSee [the other chapter's figure](#fig:elsewhere).\n"
+
+	got := convert(t, source)
+	if !strings.Contains(got, `\hyperref[fig:elsewhere]{the other chapter's figure}`) {
+		t.Errorf("a cross-chapter anchor did not convert:\n%s", got)
+	}
+}

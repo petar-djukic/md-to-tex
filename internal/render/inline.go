@@ -126,14 +126,29 @@ func (w *walker) emphasis(builder *strings.Builder, node *ast.Emphasis) error {
 	return nil
 }
 
-// link renders a url command when the text equals the target and an href
-// command otherwise (srd002-renderer-core R4.5).
+// link renders an internal anchor as a cross-reference, a self-naming link as
+// a url command, and anything else as an href command
+// (srd002-renderer-core R4.5, R4.6).
+//
+// The anchor is decided first. A link whose text is its own target would
+// otherwise take the url branch, which points a reader at an external
+// destination as surely as href does.
 func (w *walker) link(builder *strings.Builder, node *ast.Link) error {
 	target := string(node.Destination)
 	content, err := w.inlineString(node)
 	if err != nil {
 		return err
 	}
+
+	if identifier, ok := strings.CutPrefix(target, "#"); ok {
+		if identifier == "" {
+			return w.fail(w.offsetOf(node), "link",
+				"names the anchor # with no identifier after it, which can reference nothing")
+		}
+		builder.WriteString(`\hyperref[` + identifier + `]{` + content + `}`)
+		return nil
+	}
+
 	if content == latex.Escape(target) {
 		builder.WriteString(`\url{` + target + `}`)
 		return nil

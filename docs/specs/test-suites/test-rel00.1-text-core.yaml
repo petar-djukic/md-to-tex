@@ -646,6 +646,51 @@ test_cases:
     traces:
       - srd002-renderer-core R6.12
       - srd002-renderer-core AC20
+  - name: 'a target beginning with a hash names a label in the document, not a destination outside it. The failure this replaces co'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestAnInternalAnchorRendersACrossReference
+    status: done
+    description: |
+      TestAnInternalAnchorRendersACrossReference covers srd002-renderer-core
+      R4.5, R4.6, and AC22: a target beginning with a hash names a label in the
+      document, not a destination outside it. The failure this replaces compiled
+      and warned about nothing: href handed the anchor to the viewer as an
+      external target, so the text set as a link and went nowhere. The first
+      fixture is the sentence and the target from the paper that found it.
+    traces:
+      - srd002-renderer-core R4.5
+      - srd002-renderer-core R4.6
+      - srd002-renderer-core AC22
+  - name: 'only a hash target moves, so every other link renders as it did'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestLinksToOtherTargetsAreUnchanged
+    status: done
+    description: |
+      TestLinksToOtherTargetsAreUnchanged covers srd002-renderer-core R4.5 and
+      AC22: only a hash target moves, so every other link renders as it did.
+    traces:
+      - srd002-renderer-core R4.5
+      - srd002-renderer-core AC22
+  - name: 'an anchor that names nothing can reference nothing'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestABareAnchorIsAnError
+    status: done
+    description: |
+      TestABareAnchorIsAnError covers srd002-renderer-core R4.7 and AC22: an
+      anchor that names nothing can reference nothing.
+    traces:
+      - srd002-renderer-core R4.7
+      - srd002-renderer-core AC22
+  - name: 'conversion sees one chapter, and the manuscripts reference figures across chapters, so a target this chapter does not de'
+    use_case: rel00.1-uc001-prose-chapter-to-fragment
+    go_test: TestAnAnchorIsNotCheckedAgainstTheChapter
+    status: done
+    description: |
+      TestAnAnchorIsNotCheckedAgainstTheChapter covers srd002-renderer-core
+      R4.8: conversion sees one chapter, and the manuscripts reference figures
+      across chapters, so a target this chapter does not define still converts.
+    traces:
+      - srd002-renderer-core R4.8
   - name: 'the commands survive, the prose around them escapes'
     use_case: rel00.1-uc001-prose-chapter-to-fragment
     go_test: TestInlineControlSequencesPassThrough
