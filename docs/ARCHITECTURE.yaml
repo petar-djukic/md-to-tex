@@ -108,6 +108,15 @@ interfaces:
       never read one.
     srd: docs/specs/software-requirements/srd002-renderer-core.yaml
 
+  - name: Service
+    summary: |
+      The same library over HTTP: parse answers what the walk knows about a
+      document with every position as a rune offset, convert answers the
+      library's result, and render compiles a manuscript inside the TeX Live
+      image the service ships on. Content travels in the request; the service
+      reads no file, as the library reads none.
+    srd: docs/specs/software-requirements/srd010-service.yaml
+
 components:
   - name: Front-matter renderer
     responsibility: |
@@ -222,6 +231,21 @@ components:
       - Emit the input list in roster order
       - Regenerate on a roster change without touching hand-edited preamble
     srd: docs/specs/software-requirements/srd008-container.yaml
+
+  - name: Service
+    responsibility: |
+      A command over the unchanged library. The parse walk runs the
+      renderer's goldmark dialect and reports headings, segments by role with
+      rune offsets, citations, links, and problems rather than LaTeX; the
+      convert and render routes call Convert, RenderFrontMatter,
+      GenerateContainer, and latexmk the way a library caller would. The
+      image starts from TeX Live so the render route has a compiler.
+    capabilities:
+      - Parse one document to front matter, headings, segments, citations, links, and problems, with rune offsets
+      - Convert a chapter or the title page and answer the library's result as JSON
+      - Render a roster with its preamble and bibliography to a PDF under latexmk
+      - Answer a readiness probe that reports whether a compiler is present
+    srd: docs/specs/software-requirements/srd010-service.yaml
 
   - name: Backport compatibility
     responsibility: |
@@ -370,7 +394,11 @@ project_structure: |
   internal/frontmatter/   Title-page decoding and the block templates.
   internal/container/     Container document generation.
   docs/                   VISION.yaml, ARCHITECTURE.yaml, srd/, README.md.
-  magefile.go             Audit, Test, and Lint targets.
+  internal/parse/         The parse walk the service answers: segments, headings, citations, links with rune offsets.
+  internal/service/       The HTTP routes: parse, convert, render, health.
+  cmd/md-to-tex/          The serve subcommand, the image's entrypoint.
+  Dockerfile              The service on the TeX Live base with IEEEtran added.
+  magefile.go             Audit, Test, Lint, Image, and ImageSmoke targets.
 
 implementation_status:
   summary: |
@@ -397,6 +425,9 @@ implementation_status:
       status: specified-pending
     - name: Backport compatibility
       status: specified-pending
+    - name: Service
+      status: implemented
+      note: "cmd/md-to-tex serve, internal/parse, internal/service, and the Dockerfile on texlive/texlive:latest-small (GH-53)."
 
 related_documents:
   - path: docs/VISION.yaml

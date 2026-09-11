@@ -322,6 +322,13 @@ func (w *walker) heading(node *ast.Heading) error {
 
 // headingIdentifier returns the identifier the author stated, or the one
 // derived from the heading text (srd002-renderer-core R3.4, R3.5).
+// HeadingIdentifier is the identifier a heading carries: the stated {#id}
+// attribute, or the slug derived from its text. The parse walk reports it so
+// a service caller sees the identifier the fragment labels the heading with.
+func HeadingIdentifier(node *ast.Heading, heading string) (string, bool) {
+	return headingIdentifier(node, heading)
+}
+
 func headingIdentifier(node *ast.Heading, heading string) (string, bool) {
 	if attribute, ok := node.AttributeString("id"); ok {
 		switch stated := attribute.(type) {

@@ -23,5 +23,14 @@ compilation via latexmk.
 
 ## Status
 
-Scaffolding. The specification layer under `docs/` (VISION, ARCHITECTURE,
-SRDs) precedes implementation; see the open issues for the build-out order.
+The library is complete through rel01.0: every stated requirement is named
+by a passing test, and the fixture manuscript under `testdata/` converts end
+to end against committed expectations. rel02.0 adds the standalone service:
+`md-to-tex serve` answers `POST /v1/parse` (front matter, headings, segments
+with rune offsets, citations, links, problems), `POST /v1/convert` (the
+library's result), `POST /v1/render` (a PDF compiled under latexmk), and
+`GET /healthz`. The `Dockerfile` builds it on `texlive/texlive:latest-small`
+with IEEEtran added; `mage image` builds the image and `mage imageSmoke`
+renders the fixture manuscript through it. The first consumer is the corpus
+importer in
+[agentic-wiki-mesh](https://github.com/petar-djukic/agentic-wiki-mesh).

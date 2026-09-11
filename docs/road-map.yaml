@@ -79,3 +79,15 @@ releases:
     status: complete
     units: []
     gate: 'rel00.3 complete. Validation only: a gap found here files back into the SRD it belongs to. The library half is done -- every stated requirement is named by a passing test, the audit gates that from here on, and a fixture manuscript converts end to end against committed expectations. The adoption half is cross-repo and cannot close here: paperkit consuming the library for one paper is petar-djukic/autogenic-systems#468.'
+
+  - id: rel02.0
+    version: "02.0"
+    use_cases:
+      - id: rel02.0-uc001-parse-and-render-over-http
+        summary: A mesh parses its corpus and a pipeline renders a paper over HTTP.
+        status: done
+    name: Standalone service
+    status: complete
+    units:
+      - srd010-service
+    gate: 'rel01.0 complete. The service is a command over the unchanged library: parse with rune offsets for the corpus importer in agentic-wiki-mesh, convert and render for the pipeline, on a TeX Live image whose smoke compiles the fixture manuscript. Filed as GH-53 for petar-djukic/agentic-wiki-mesh#14.'

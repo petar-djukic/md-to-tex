@@ -1,0 +1,122 @@
+# Copyright (c) 2026 Petar Djukic. All rights reserved. SPDX-License-Identifier: MIT
+
+id: srd010-service
+title: Standalone Service
+
+problem: |
+  A mesh of declarative agents reaches a capability through a declared REST
+  client, not through a Go import. The first such consumer is the corpus
+  importer in agentic-wiki-mesh, which needs what the parser knows about a
+  markdown document - its front matter, its headings, the position of every
+  block, its citations and links - and not the LaTeX the renderer emits.
+  Linking the library into the importer would give it a parser of its own to
+  keep in step with this one; reading the same dialect over HTTP keeps one
+  parser.
+
+  The manuscript pipeline has the mirror need. Compiling a paper takes a TeX
+  distribution, which is the one dependency a Go binary cannot carry. A
+  service built on a TeX Live image carries it, so a pipeline that already
+  talks HTTP renders a PDF without installing TeX beside itself.
+
+goals:
+  - G1: Expose parse, convert, and render over HTTP, each taking content in the request and reading no file
+  - G2: Report every position as a rune offset into the source the caller sent
+  - G3: Run the same binary on a developer's loopback and as the container's entrypoint
+  - G4: Leave the exported library unchanged; the service is a command over it
+
+requirements:
+  R1:
+    title: The surface
+    items:
+      - R1.1: 'The binary answers `md-to-tex serve --listen ADDRESS`, listening on the address for the routes below; ADDRESS defaults to :8090. There is no other subcommand.'
+      - R1.2: 'GET /healthz answers 200 with a JSON body naming the status and whether a LaTeX compiler is on the service''s path, so a readiness probe and a caller that wants to render both read one route.'
+      - R1.3: 'POST /v1/parse, /v1/convert, and /v1/render take the document content in the request body. Parse accepts either a JSON envelope with name and source or the raw markdown as text/markdown with the name in the X-Document-Name header; convert and render take JSON. No route reads a file path, matching the library''s own contract (srd002-renderer-core R2.1).'
+      - R1.4: 'A malformed request answers 400 with a JSON problem naming what was wrong; a document the library cannot convert answers 422 carrying the positioned error the library reports - name, line, construct, detail - so a caller sees what a library caller sees.'
+      - R1.5: 'A request body is bounded at sixteen megabytes and a render at three minutes; a body or a compile past either fails with the bound named.'
+    examples:
+      - markdown: |
+          POST /v1/parse
+          Content-Type: text/markdown
+          X-Document-Name: note.md
+
+          # Heading {#h}
+
+          Text [@key] and [[other]].
+        latex: |
+          {"name": "note.md", "front_matter": {}, "runes": 45,
+           "headings": [{"level": 1, "text": "Heading", "identifier": "h", "derived": false, "offset": 0}],
+           "segments": [{"role": "heading", "text": "# Heading {#h}", "start": 0, "end": 14},
+                        {"role": "body", "text": "Text [@key] and [[other]].", "start": 16, "end": 42, "heading": "h"}],
+           "citations": [{"keys": ["key"], "offset": 21}],
+           "links": [{"kind": "wikilink", "target": "other", "text": "other", "offset": 32}],
+           "problems": []}
+        note: |
+          The response is JSON, shown here in place of LaTeX because this
+          document's output is not LaTeX. Offsets count runes from the start
+          of the source as sent.
+  R2:
+    title: Parse
+    items:
+      - R2.1: 'Parse reads the document with the renderer''s dialect - the citation extension, pipe tables, heading attributes - so a construct that parses here converts there and one that does not is reported here first.'
+      - R2.2: 'The response carries the front matter as the YAML mapping decoded as written, with no field renamed or dropped; a document with no front matter carries an empty mapping.'
+      - R2.3: 'The response carries every top-level block of the body as a segment with a role, the exact source text it spans, and its rune start and end. The roles are heading, body, byline, references, and code. A block under a heading whose text names a reference list - references, bibliography, sources, works cited, further reading, see also - is references; a fenced or indented code block is code and carries the fence''s language; a heading is heading; everything else is body.'
+      - R2.4: 'The blocks before the first heading of a document that has headings are bylines, which is where the manuscripts and the imported sources put their author and organization lines; a document with no heading has no byline and every block is body.'
+      - R2.5: 'The response carries every heading with its level, text, the identifier the renderer would label it with and whether it was derived, and its offset; every citation run with its keys in order and its offset; and every link - Obsidian wikilink with its target and alias, markdown link, and autolink - with its target, text, and offset.'
+      - R2.6: 'Parse never fails on the content: a malformed citation run, or front matter that does not decode, is reported as a problem with its construct, line, offset, and detail, and the rest of the document is reported as usual. An importer wants what it can read from every file and a list of what it could not.'
+      - R2.7: 'Every segment''s text equals the source between its offsets, and the segments in order, with the whitespace between them removed, reproduce the body with its whitespace removed; nothing an author wrote falls between segments.'
+  R3:
+    title: Convert
+    items:
+      - R3.1: 'Convert takes one document, its kind - chapter, or front-matter for the title page - and the library''s Options as JSON, and answers the library''s Result as JSON: the fragment and its label reports. A chapter converts through Convert and the title page through RenderFrontMatter, exactly as a library caller would call them.'
+      - R3.2: 'The fragment a convert answers is byte-identical to what the library returns for the same input, which the committed expectations under testdata prove.'
+  R4:
+    title: Render
+    items:
+      - R4.1: 'Render takes a roster of chapters in order, each with its kind, the Options, the container Options, and the text of the two files the container names by reference - the preamble and the bibliography - because the service reads no file and the container generator writes none (srd008-container R1.3, R1.5).'
+      - R4.2: 'Render converts each chapter, checks the label reports for collisions, generates the container, writes the fragments and the two files into a temporary directory, compiles with latexmk under xelatex, and answers the PDF as application/pdf. The directory is removed after the answer.'
+      - R4.3: 'A render that produces no PDF answers 422 with the compiler''s exit status and the tail of its log; a render on a service with no compiler answers 503 naming latexmk, before any conversion runs.'
+      - R4.4: 'An empty roster, an unnamed chapter, and a label collision each answer 422 naming the problem, as the library does for the same inputs (srd008-container R2.4, srd002-renderer-core R7).'
+  R5:
+    title: The image
+    items:
+      - R5.1: 'The container image starts from the TeX Live image the Dockerfile pins, adds the IEEEtran class the manuscripts compile against and the one binary, and runs serve as its entrypoint on port 8090. It expects no network at run time.'
+      - R5.2: 'The image smoke starts the image, waits on /healthz, renders the fixture manuscript, and requires a PDF back; it runs under mage and skips with the reason named when Docker or the image is absent.'
+
+non_goals:
+  - "Reading or writing files on behalf of a caller. Content travels in the request, and a render's working directory is the service's own and gone after the answer."
+  - "Authentication, rate limiting, or transport security. The service sits behind whatever the deployment puts in front of it; in the mesh that is the REST client's limits and host allowlist."
+  - "A second parser. Parse walks the renderer's goldmark tree; a construct the dialect has no node for, such as an Obsidian wikilink, is found by scanning the block's source and is reported, not rendered."
+  - "Serving the tex-to-markdown backport. That direction stays where it was (srd009-backport-compatibility)."
+
+acceptance_criteria:
+  - id: AC1
+    criterion: A parse of the fixture chapters returns front matter, headings, segments, citations, links, and problems, with every segment's text equal to its rune span and the segments in order reproducing the body.
+    traces: [R1.3, R2.1, R2.2, R2.3, R2.5, R2.7]
+  - id: AC2
+    criterion: The blocks before the first heading are bylines, blocks under a references heading are references, a fenced block is code with its language, and a headingless note has no byline.
+    traces: [R2.3, R2.4]
+  - id: AC3
+    criterion: A malformed citation and a document with no front matter each parse, with the citation reported as a problem at its line and offset.
+    traces: [R2.6]
+  - id: AC4
+    criterion: A convert of the fixture chapter returns the committed fragment byte for byte, the title page converts as front matter, and an unmapped construct answers 422 with the library's positioned error.
+    traces: [R1.4, R3.1, R3.2]
+  - id: AC5
+    criterion: A render without a compiler answers 503 naming latexmk and health reports it absent; an empty roster and a label collision each answer 422 naming the problem.
+    traces: [R1.2, R4.3, R4.4]
+  - id: AC6
+    criterion: Inside the image, a render of the fixture manuscript with its preamble and bibliography returns a PDF; the image smoke proves it and skips, naming why, without Docker.
+    traces: [R4.1, R4.2, R5.1, R5.2]
+  - id: AC7
+    criterion: The parse route accepts the JSON envelope and raw markdown alike and answers the same document for both; a malformed body answers 400; the serve subcommand is the binary's only one and the bounds are stated.
+    traces: [R1.1, R1.3, R1.4, R1.5]
+
+depends_on:
+  - srd_id: srd002-renderer-core
+    symbols_used: [R1, R2, R7]
+  - srd_id: srd001-front-matter
+    symbols_used: [R1]
+  - srd_id: srd006-citations
+    symbols_used: [R1]
+  - srd_id: srd008-container
+    symbols_used: [R1, R2]

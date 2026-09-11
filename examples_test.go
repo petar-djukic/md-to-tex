@@ -70,7 +70,10 @@ func chapterExamples(t *testing.T) []example {
 		switch {
 		case stated.SRD == "srd001-front-matter",
 			stated.SRD == "srd008-container",
-			stated.SRD == "srd009-backport-compatibility":
+			stated.SRD == "srd009-backport-compatibility",
+			// The service example states an HTTP request and its JSON answer,
+			// which the service tests exercise.
+			stated.SRD == "srd010-service":
 			continue
 		case strings.HasPrefix(strings.TrimSpace(stated.Markdown), "---"):
 			continue
