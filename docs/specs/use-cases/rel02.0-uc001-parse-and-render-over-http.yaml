@@ -1,0 +1,71 @@
+# Copyright (c) 2026 Petar Djukic. All rights reserved. SPDX-License-Identifier: MIT
+
+id: rel02.0-uc001-parse-and-render-over-http
+title: A Mesh Parses Its Corpus and a Pipeline Renders a Paper Over HTTP
+
+summary: |
+  A corpus importer in a mesh of declarative agents reads markdown through a
+  declared REST client rather than a parser of its own, and gets back what
+  the renderer knows about the document: front matter, headings, every block
+  with its rune position, citations, links, and what did not parse. The same
+  service, running on a TeX Live image, renders a manuscript to a PDF for a
+  pipeline that has no TeX installed beside it.
+
+actor: The corpus importer in agentic-wiki-mesh, and the paper pipeline.
+
+trigger: |
+  The importer finds a new or changed file under a linked root, or the
+  pipeline asks for a PDF.
+
+preconditions:
+  - The service is running, on loopback for a developer or as its own workload in the cluster.
+  - The caller holds the document content; the service reads no file.
+
+flow:
+  - id: F1
+    text: The importer posts one document to the parse route, as raw markdown with its name in a header.
+  - id: F2
+    text: The service parses it with the renderer's dialect and answers the front matter, the headings with their identifiers, the segments with roles and rune offsets, the citations, the links, and the problems.
+  - id: F3
+    text: The importer stores each segment with its offsets as provenance, so a citation later resolves to a position in the source.
+  - id: F4
+    text: The pipeline posts the roster, the options, the preamble, and the bibliography to the render route.
+  - id: F5
+    text: The service converts each chapter, generates the container, compiles under latexmk inside the image, and answers the PDF, or the log when the compile fails.
+  - id: F6
+    text: A service with no compiler answers the render with 503 naming latexmk, and its health route says so, so a caller on a loopback build knows before it asks.
+
+touchpoints:
+  - id: T1
+    target: srd010-service R1 R2 AC1 AC3 AC7 -- The parse route takes content in the request and answers the fields with rune offsets, never failing on the content.
+    reason: Flows F1 to F3 are the importer's whole need; a parse that failed on one file would lose the rest.
+  - id: T2
+    target: srd010-service R3 AC4 -- Convert answers what the library answers, byte for byte, with the library's positioned error on failure.
+    reason: The service is a command over the library and must not become a second implementation.
+  - id: T3
+    target: srd010-service R4 R5 AC5 AC6 -- Render compiles inside the image and says, before converting anything, when it cannot.
+    reason: Flows F4 to F6 are why the image starts from TeX Live.
+  - id: T4
+    target: srd008-container R1 AC1 -- The container names the preamble and the bibliography by reference, which is why the render request carries their text.
+    reason: A service that reads no file needs the caller to send what the container would have found on disk.
+
+success_criteria:
+  - id: S1
+    criterion: Every segment a parse answers equals the source between its rune offsets, and the segments joined in order reproduce the body; the parse never fails on content, reporting a malformed citation as a problem instead.
+    traces:
+      - srd010-service R2.6
+      - srd010-service R2.7
+      - srd010-service AC1
+      - srd010-service AC3
+  - id: S2
+    criterion: A convert over the service matches the library's committed expectation byte for byte, and an unmapped construct answers the library's positioned error.
+    traces:
+      - srd010-service R3.2
+      - srd010-service AC4
+  - id: S3
+    criterion: A render inside the image returns a PDF for the fixture manuscript, and a service without a compiler says so before converting anything.
+    traces:
+      - srd010-service R4.2
+      - srd010-service R4.3
+      - srd010-service AC5
+      - srd010-service AC6

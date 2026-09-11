@@ -1,0 +1,11 @@
+% The preamble the fixture manuscript compiles under in the service's render
+% tests and the image smoke: the packages the emitted forms use, and a
+% stand-in for the figure files, which a render request cannot carry.
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage{fontspec}
+\let\oldincludegraphics\includegraphics
+\renewcommand{\includegraphics}[2][]{\fbox{figure #2}}

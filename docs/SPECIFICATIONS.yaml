@@ -14,11 +14,13 @@ overview: |
   the floats. Raw-LaTeX passthrough is the route around the mapping, the
   front-matter renderer and the container generator make a compilable
   document, and backport compatibility is the bar the emitting documents
-  answer to rather than a component of its own.
+  answer to rather than a component of its own. A tenth document, the
+  standalone service, exposes parse, convert, and render over HTTP on a TeX
+  Live image, for a mesh that reaches the library through a REST client.
 
   The road map assigns each document to the release that implements it. The
-  text core landed in rel00.1; the floats, the document shell, and pipeline
-  adoption follow.
+  text core landed in rel00.1; the floats, the document shell, pipeline
+  adoption, and the service followed.
 
 roadmap_summary:
   - version: "00.0"
@@ -46,6 +48,11 @@ roadmap_summary:
     status: done
     scope: |
       no requirement documents of its own.
+  - version: "02.0"
+    name: Standalone service
+    status: done
+    scope: |
+      srd010-service.
 
 srd_index:
   - id: srd001-front-matter
@@ -93,6 +100,11 @@ srd_index:
     path: docs/specs/software-requirements/srd009-backport-compatibility.yaml
     summary: |
       The constraint the emitting components answer to: every construct must survive the pipeline's LaTeX reader well enough that a caption or prose edit comes back as a prose change rather than a raw block.
+  - id: srd010-service
+    title: Standalone Service
+    path: docs/specs/software-requirements/srd010-service.yaml
+    summary: |
+      The HTTP surface over the library: parse answers front matter, headings, segments with rune offsets, citations, links, and problems; convert answers the library's result; render compiles a manuscript to a PDF inside a TeX Live image. Content travels in the request and no file is read.
 
 coverage_notes: |
   Requirement coverage is the test-evidence audit's to report: the test suites

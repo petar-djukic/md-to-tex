@@ -185,7 +185,7 @@ risks:
 not:
   - "A general-purpose markdown converter. We cover the constructs the manuscripts use and pass the rest through as raw LaTeX."
   - "The tex-to-markdown backport reader. That direction stays on pandoc's LaTeX reader in paperkit; we constrain what we emit so it keeps working."
-  - "PDF compilation. Latexmk stays in paperkit, as does figure compilation and the reference corpus."
+  - "PDF compilation in the library. Latexmk stays in paperkit for the pipeline's own builds, as do figure compilation and the reference corpus; the standalone service (srd010-service) compiles a manuscript it is sent, inside the TeX Live image it ships on, for a caller that has no TeX beside it."
   - "A LaTeX class or style file. We emit for IEEEtran as the venue class supplies it."
-  - "A command-line tool. The deliverable is a library; paperkit owns the executable."
+  - "A command-line converter. The deliverable is a library; paperkit owns the executable that converts a paper. The one binary here is the service's serve command, which exposes the library over HTTP and converts nothing from the command line."
   - "A pandoc replacement anywhere but the forward chapter and front-matter path."

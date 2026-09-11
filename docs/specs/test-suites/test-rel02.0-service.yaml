@@ -1,0 +1,152 @@
+# Copyright (c) 2026 Petar Djukic. All rights reserved. SPDX-License-Identifier: MIT
+
+id: test-rel02.0-service
+title: Test Suite for Release 02.0 Standalone Service
+release: "02.0"
+
+overview: |
+  This suite carries the evidence for the service: the parse walk with rune
+  offsets, the HTTP routes, the render path, and the image. Each case names
+  the Go test behind it; the image case names the mage target that runs the
+  smoke inside the TeX Live container, and the Go test it points at is the
+  one that target drives.
+
+traces:
+  - rel02.0-uc001-parse-and-render-over-http
+
+preconditions:
+  - The library of rel00.1 through rel00.3 converts the fixture manuscript against committed expectations.
+  - For the image case, Docker is present and the image has been built with mage image.
+
+test_cases:
+  - name: parse reports the fields with rune offsets
+    use_case: rel02.0-uc001-parse-and-render-over-http
+    go_test: TestParseReportsTheFieldsWithRuneOffsets
+    status: done
+    description: |
+      TestParseReportsTheFieldsWithRuneOffsets covers srd010-service R2.1,
+      R2.2, R2.3, R2.4, R2.5, and AC2: a note with multibyte text parses to
+      its front matter, two headings with a stated and a derived identifier,
+      a byline, body, references, and code segments whose text equals the
+      rune span, two citations, and a wikilink, a markdown link, and an
+      autolink at the right offsets.
+    traces:
+      - srd010-service R2.1
+      - srd010-service R2.2
+      - srd010-service R2.3
+      - srd010-service R2.4
+      - srd010-service R2.5
+      - srd010-service AC1
+      - srd010-service AC2
+  - name: the segments cover the body
+    use_case: rel02.0-uc001-parse-and-render-over-http
+    go_test: TestParseSegmentsCoverTheBody
+    status: done
+    description: |
+      TestParseSegmentsCoverTheBody covers srd010-service R2.7 and AC1 over
+      the three fixture chapters: every segment equals its span, the segments
+      do not overlap, and joined without whitespace they reproduce the body.
+    traces:
+      - srd010-service R2.7
+      - srd010-service AC1
+  - name: a malformed citation is a problem and a note without front matter parses
+    use_case: rel02.0-uc001-parse-and-render-over-http
+    go_test: TestParseReportsAMalformedCitationAndNoFrontMatter
+    status: done
+    description: |
+      TestParseReportsAMalformedCitationAndNoFrontMatter covers srd010-service
+      R2.6 and AC3, and the headingless half of R2.4.
+    traces:
+      - srd010-service R2.6
+      - srd010-service R2.4
+      - srd010-service AC3
+  - name: the parse route accepts the envelope and raw markdown alike
+    use_case: rel02.0-uc001-parse-and-render-over-http
+    go_test: TestParseAcceptsJSONAndRawMarkdown
+    status: done
+    description: |
+      TestParseAcceptsJSONAndRawMarkdown covers srd010-service R1.3, R1.4,
+      and AC7: the two request forms answer the same document and a malformed
+      body answers 400.
+    traces:
+      - srd010-service R1.3
+      - srd010-service R1.4
+      - srd010-service AC7
+  - name: convert answers the library's fragment and its positioned error
+    use_case: rel02.0-uc001-parse-and-render-over-http
+    go_test: TestConvertRendersAChapterAndPositionsAnError
+    status: done
+    description: |
+      TestConvertRendersAChapterAndPositionsAnError covers srd010-service
+      R3.1, R3.2, and AC4: the fixture chapter converts to the committed
+      expectation byte for byte, the title page converts as front matter, and
+      a thematic break answers 422 with the library's name, line, and
+      construct.
+    traces:
+      - srd010-service R3.1
+      - srd010-service R3.2
+      - srd010-service AC4
+  - name: a render without a compiler says so
+    use_case: rel02.0-uc001-parse-and-render-over-http
+    go_test: TestRenderWithoutLatexmkSaysSo
+    status: done
+    description: |
+      TestRenderWithoutLatexmkSaysSo covers srd010-service R1.2, R4.3, and
+      AC5: a service configured with a compiler path that does not exist
+      answers 503 naming latexmk and its health route reports the compiler
+      absent.
+    traces:
+      - srd010-service R1.2
+      - srd010-service R4.3
+      - srd010-service AC5
+  - name: a render refuses an empty roster and a collision before compiling
+    use_case: rel02.0-uc001-parse-and-render-over-http
+    go_test: TestRenderRefusesAnEmptyRosterAndACollision
+    status: done
+    description: |
+      TestRenderRefusesAnEmptyRosterAndACollision covers srd010-service R4.4
+      and AC5.
+    traces:
+      - srd010-service R4.4
+      - srd010-service AC5
+  - name: the health route answers
+    use_case: rel02.0-uc001-parse-and-render-over-http
+    go_test: TestHealthAnswers
+    status: done
+    description: |
+      TestHealthAnswers covers srd010-service R1.2.
+    traces:
+      - srd010-service R1.2
+  - name: the serve subcommand and the bounds
+    use_case: rel02.0-uc001-parse-and-render-over-http
+    go_test: TestServeIsTheOnlySubcommand
+    status: done
+    description: |
+      TestServeIsTheOnlySubcommand covers srd010-service R1.1 and R1.5: the
+      binary refuses any other subcommand, the listen address defaults to
+      :8090, and the request and render bounds are the stated constants.
+    traces:
+      - srd010-service R1.1
+      - srd010-service R1.5
+      - srd010-service AC7
+  - name: a render runs the compiler over the written manuscript and answers the PDF
+    use_case: rel02.0-uc001-parse-and-render-over-http
+    go_test: TestRenderRunsTheCompilerAndAnswersThePDF
+    status: done
+    description: |
+      TestRenderRunsTheCompilerAndAnswersThePDF covers srd010-service R4.1,
+      R4.2, R4.3, R5.1, R5.2, and AC6 on any host: a compiler stand-in checks
+      that the working directory holds the container, every fragment, the
+      preamble, and the bibliography, that latexmk is invoked under xelatex
+      over main.tex, and that the PDF it writes is answered; a failing
+      compiler answers 422 with its exit status and log. The compile itself
+      is proven inside the image by mage imageSmoke, which renders the same
+      fixture request against the built image and requires a PDF, skipping
+      by name when Docker or the image is absent.
+    traces:
+      - srd010-service R4.1
+      - srd010-service R4.2
+      - srd010-service R4.3
+      - srd010-service R5.1
+      - srd010-service R5.2
+      - srd010-service AC6
