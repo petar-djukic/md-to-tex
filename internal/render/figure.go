@@ -52,7 +52,7 @@ func (w *walker) figure(node *ast.Paragraph, image *ast.Image, attributes string
 
 	w.out.WriteString(`\begin{` + environment + "}[!t]\n")
 	w.out.WriteString("\\centering\n")
-	w.out.WriteString(`\includegraphics[width=` + width + `]{` + path.Base(target) + "}\n")
+	w.out.WriteString(`\includegraphics[width=` + width + `]{` + includeName(target) + "}\n")
 	w.out.WriteString(`\caption{` + caption + "}\n")
 	w.out.WriteString(`\label{` + parsed.identifier + "}\n")
 	w.out.WriteString(`\end{` + environment + "}\n\n")
@@ -156,6 +156,27 @@ func parseWidth(value string) (string, error) {
 		return "", fmt.Errorf("states the width %q; a width is a fraction of the measure, above zero and at most one", value)
 	}
 	return value, nil
+}
+
+// graphicsExtensions are the extensions includeName strips: the markdown
+// names the preview artifact, and an extensionless include lets graphicx
+// resolve the print artifact through the graphics path and its extension
+// order (srd004-figures R4.1, R4.2).
+var graphicsExtensions = map[string]bool{
+	".pdf": true, ".png": true, ".jpg": true, ".jpeg": true,
+	".eps": true, ".svg": true,
+}
+
+// includeName is the include argument for a figure target: the base name,
+// with its graphics extension stripped. An extension outside the graphics
+// set stays, so a name graphicx cannot resolve by extension order is
+// included as written (srd004-figures R4.2).
+func includeName(target string) string {
+	base := path.Base(target)
+	if extension := path.Ext(base); graphicsExtensions[strings.ToLower(extension)] {
+		return strings.TrimSuffix(base, extension)
+	}
+	return base
 }
 
 // checkTarget rejects the targets a graphics path cannot resolve
