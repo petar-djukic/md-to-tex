@@ -11,7 +11,7 @@ func TestFigureRendersTheSRDExample(t *testing.T) {
 	const source = "![Autonomy levels graded by who writes the specification.](fig/01-kinds-to-levels.pdf){#fig:kinds-to-levels}\n"
 	const want = "\\begin{figure}[!t]\n" +
 		"\\centering\n" +
-		"\\includegraphics[width=\\columnwidth]{01-kinds-to-levels.pdf}\n" +
+		"\\includegraphics[width=\\columnwidth]{01-kinds-to-levels}\n" +
 		"\\caption{Autonomy levels graded by who writes the specification.}\n" +
 		"\\label{fig:kinds-to-levels}\n" +
 		"\\end{figure}\n"
@@ -27,7 +27,7 @@ func TestWideFigureSpansBothColumns(t *testing.T) {
 	const source = "![The closed loop runs the algorithm its specification records.](fig/00-concept-structure.pdf){#fig:concept-structure .wide}\n"
 	const want = "\\begin{figure*}[!t]\n" +
 		"\\centering\n" +
-		"\\includegraphics[width=\\textwidth]{00-concept-structure.pdf}\n" +
+		"\\includegraphics[width=\\textwidth]{00-concept-structure}\n" +
 		"\\caption{The closed loop runs the algorithm its specification records.}\n" +
 		"\\label{fig:concept-structure}\n" +
 		"\\end{figure*}\n"
@@ -43,7 +43,7 @@ func TestFigureWidthScalesTheEnclosingMeasure(t *testing.T) {
 	const source = "![A narrow diagram.](fig/02-narrow.pdf){#fig:narrow width=0.6}\n"
 	const want = "\\begin{figure}[!t]\n" +
 		"\\centering\n" +
-		"\\includegraphics[width=0.6\\columnwidth]{02-narrow.pdf}\n" +
+		"\\includegraphics[width=0.6\\columnwidth]{02-narrow}\n" +
 		"\\caption{A narrow diagram.}\n" +
 		"\\label{fig:narrow}\n" +
 		"\\end{figure}\n"
@@ -60,16 +60,16 @@ func TestFigureWidthScalesTheEnclosingMeasure(t *testing.T) {
 
 // TestFigureKeepsItsFileName covers srd004-figures R4.1, R4.2, and AC3: the
 // directory is dropped because the container supplies a graphics path, and the
-// extension is never rewritten.
+// graphics extension is stripped so graphicx resolves the artifact.
 func TestFigureKeepsItsFileName(t *testing.T) {
 	cases := []struct {
 		target string
 		want   string
 	}{
-		{"fig/01-kinds-to-levels.pdf", "01-kinds-to-levels.pdf"},
-		{"figures/deep/02-nested.pdf", "02-nested.pdf"},
-		{"03-beside-the-chapter.pdf", "03-beside-the-chapter.pdf"},
-		{"fig/04-raster.png", "04-raster.png"},
+		{"fig/01-kinds-to-levels.pdf", "01-kinds-to-levels"},
+		{"figures/deep/02-nested.pdf", "02-nested"},
+		{"03-beside-the-chapter.pdf", "03-beside-the-chapter"},
+		{"fig/04-raster.png", "04-raster"},
 	}
 
 	for _, testCase := range cases {
@@ -186,7 +186,7 @@ func TestInlineImageIsNotAFloat(t *testing.T) {
 func TestFigureReadsNoFile(t *testing.T) {
 	got := convert(t, "![A caption.](fig/nothing-on-disk-anywhere.pdf){#fig:absent}\n")
 
-	if !strings.Contains(got, "{nothing-on-disk-anywhere.pdf}") {
+	if !strings.Contains(got, "{nothing-on-disk-anywhere}") {
 		t.Errorf("a figure that does not exist should still convert:\n%s", got)
 	}
 }
@@ -204,5 +204,21 @@ func TestFigureEmitsNoWrapper(t *testing.T) {
 	lines := strings.Split(strings.TrimSpace(got), "\n")
 	if len(lines) != 6 || !strings.HasPrefix(lines[3], `\caption{`) || !strings.HasPrefix(lines[4], `\label{`) {
 		t.Errorf("the float is not the six plain lines the SRD states:\n%s", got)
+	}
+}
+
+// TestFigureIncludeDropsTheGraphicsExtension covers srd004-figures R4.1,
+// R4.2, and AC3: a PNG reference includes extensionless, so graphicx resolves
+// the PDF on the graphics path when one exists, and a target without a
+// graphics extension is included as its base name unchanged.
+func TestFigureIncludeDropsTheGraphicsExtension(t *testing.T) {
+	png := convert(t, "![The two software cycles.](figures/cycles.png){#fig:cycles}\n")
+	if !strings.Contains(png, `\includegraphics[width=\columnwidth]{cycles}`) {
+		t.Errorf("a PNG target kept its extension:\n%s", png)
+	}
+
+	plain := convert(t, "![A prebuilt artifact.](fig/04-artifact){#fig:artifact}\n")
+	if !strings.Contains(plain, `\includegraphics[width=\columnwidth]{04-artifact}`) {
+		t.Errorf("an extensionless target was rewritten:\n%s", plain)
 	}
 }
