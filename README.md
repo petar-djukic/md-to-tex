@@ -1,5 +1,7 @@
 # md-to-tex
 
+> **Archived.** The converter now lives in [paperkit](https://github.com/petar-djukic/paperkit) as the `mdtotex` package, absorbed with this repository's history at 2d29bf0 and released in paperkit v0.20261107.3 ([autogenic-systems#901](https://github.com/petar-djukic/autogenic-systems/issues/901)). This repository is read-only. Its tagged versions stay fetchable, so modules that still pin them keep building. The HTTP service, the requirement documents under `docs/`, and their tooling remain here as the record; the worked examples from those documents are pinned in paperkit's `mdtotex/testdata/examples.yaml`.
+
 Go library that converts Obsidian-native markdown manuscripts into IEEEtran
 LaTeX.
 
